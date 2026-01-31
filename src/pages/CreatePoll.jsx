@@ -1,107 +1,115 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import ImageUpload from '../components/ImageUpload'
-import GenderSelect from '../components/GenderSelect'
-import { createPoll, checkPollRateLimit } from '../services/polls'
-import { useToast } from '../context/ToastContext'
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import ImageUpload from "../components/ImageUpload";
+import GenderSelect from "../components/GenderSelect";
+import { createPoll, checkPollRateLimit } from "../services/polls";
+import { useToast } from "../context/ToastContext";
 
 const contextOptions = [
-  { value: 'date', label: 'Date Night' },
-  { value: 'work', label: 'Work' },
-  { value: 'casual', label: 'Casual' },
-  { value: 'event', label: 'Event' },
-  { value: 'other', label: 'Other' },
-]
+  { value: "date", label: "Date Night" },
+  { value: "work", label: "Work" },
+  { value: "casual", label: "Casual" },
+  { value: "event", label: "Event" },
+  { value: "other", label: "Other" },
+];
 
 const durationOptions = [
-  { value: 15, label: '15 minutes', description: 'Quick decision' },
-  { value: 60, label: '1 hour', description: 'Fast feedback' },
-  { value: 240, label: '4 hours', description: 'Get more votes' },
-  { value: 480, label: '8 hours', description: 'Maximum votes' },
-]
+  { value: 15, label: "15 minutes", description: "Quick decision" },
+  { value: 60, label: "1 hour", description: "Fast feedback" },
+  { value: 240, label: "4 hours", description: "Get more votes" },
+  { value: 480, label: "8 hours", description: "Maximum votes" },
+];
 
 const bodyTypeOptions = [
-  { value: 'petite', label: 'Petite' },
-  { value: 'slim', label: 'Slim' },
-  { value: 'athletic', label: 'Athletic' },
-  { value: 'curvy', label: 'Curvy' },
-  { value: 'plus-size', label: 'Plus-size' },
-  { value: 'prefer-not', label: 'Prefer not to say' },
-]
+  { value: "petite", label: "Petite" },
+  { value: "slim", label: "Slim" },
+  { value: "athletic", label: "Athletic" },
+  { value: "curvy", label: "Curvy" },
+  { value: "plus-size", label: "Plus-size" },
+  { value: "prefer-not", label: "Prefer not to say" },
+];
 
 export default function CreatePoll() {
-  const navigate = useNavigate()
-  const { showToast } = useToast()
-  const [step, setStep] = useState(1)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState(null)
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
-    gender: '',
-    bodyType: '',
-    context: '',
+    gender: "",
+    bodyType: "",
+    context: "",
     duration: 60, // default 1 hour in minutes
     imageA: null,
     imageB: null,
-  })
-  const [rateLimit, setRateLimit] = useState({ canCreate: true, remaining: 5, resetAt: null })
-  const [rateLimitLoading, setRateLimitLoading] = useState(true)
+  });
+  const [rateLimit, setRateLimit] = useState({
+    canCreate: true,
+    remaining: 5,
+    resetAt: null,
+  });
+  const [rateLimitLoading, setRateLimitLoading] = useState(true);
 
   // Check rate limit on mount
   useEffect(() => {
     const checkLimit = async () => {
       try {
-        const limit = await checkPollRateLimit()
-        setRateLimit(limit)
+        const limit = await checkPollRateLimit();
+        setRateLimit(limit);
       } catch (err) {
-        console.error('Failed to check rate limit:', err)
+        console.error("Failed to check rate limit:", err);
       } finally {
-        setRateLimitLoading(false)
+        setRateLimitLoading(false);
       }
-    }
-    checkLimit()
-  }, [])
+    };
+    checkLimit();
+  }, []);
 
   const updateForm = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const canProceed = () => {
     switch (step) {
-      case 1: return formData.gender !== ''
-      case 2: return formData.imageA !== null && formData.imageB !== null
-      case 3: return true
-      default: return false
+      case 1:
+        return formData.gender !== "";
+      case 2:
+        return formData.imageA !== null && formData.imageB !== null;
+      case 3:
+        return true;
+      default:
+        return false;
     }
-  }
+  };
 
   const handleNext = () => {
     if (step < 3) {
-      setStep(step + 1)
+      setStep(step + 1);
     } else {
-      handleSubmit()
+      handleSubmit();
     }
-  }
+  };
 
   const handleBack = () => {
     if (step > 1) {
-      setStep(step - 1)
+      setStep(step - 1);
     }
-  }
+  };
 
   const formatResetTime = (resetAt) => {
-    if (!resetAt) return ''
-    const date = new Date(resetAt)
-    const hours = date.getHours()
-    const minutes = date.getMinutes()
-    const ampm = hours >= 12 ? 'PM' : 'AM'
-    const formattedHours = hours % 12 || 12
-    const formattedMinutes = minutes.toString().padStart(2, '0')
-    return `${formattedHours}:${formattedMinutes} ${ampm}`
-  }
+    if (!resetAt) return "";
+    const date = new Date(resetAt);
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const formattedHours = hours % 12 || 12;
+    const formattedMinutes = minutes.toString().padStart(2, "0");
+    return `${formattedHours}:${formattedMinutes} ${ampm}`;
+  };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true)
-    setError(null)
+    setIsSubmitting(true);
+    setError(null);
 
     try {
       const poll = await createPoll({
@@ -111,33 +119,38 @@ export default function CreatePoll() {
         duration: formData.duration,
         imageAFile: formData.imageA.file,
         imageBFile: formData.imageB.file,
-      })
+      });
 
-      showToast('Poll created successfully!', 'success')
+      showToast("Poll created successfully!", "success");
       // Navigate to the results page for the new poll
-      navigate(`/results/${poll.id}`)
+      navigate(`/results/${poll.id}`);
     } catch (err) {
-      console.error('Failed to create poll:', err)
+      console.error("Failed to create poll:", err);
 
-      if (err.message === 'RATE_LIMIT_EXCEEDED') {
-        const resetTime = formatResetTime(err.resetAt)
-        const errorMsg = `You've reached the daily limit of 5 polls. You can create another poll ${resetTime ? `after ${resetTime}` : 'tomorrow'}.`
-        setError(errorMsg)
-        showToast('Daily limit reached', 'error')
-        setRateLimit({ canCreate: false, remaining: 0, resetAt: err.resetAt })
-      } else if (err.message === 'MODERATION_REJECTED') {
-        const whichImage = err.rejectedImage === 'both'
-          ? 'One or more of your images'
-          : `Outfit ${err.rejectedImage}`
-        setError(`${whichImage} couldn't be posted because it may contain content that doesn't meet our community guidelines. Please try different photos.`)
-        showToast('Image rejected by moderation', 'error')
+      if (err.message === "RATE_LIMIT_EXCEEDED") {
+        const resetTime = formatResetTime(err.resetAt);
+        const errorMsg = `You've reached the daily limit of 5 polls. You can create another poll ${
+          resetTime ? `after ${resetTime}` : "tomorrow"
+        }.`;
+        setError(errorMsg);
+        showToast("Daily limit reached", "error");
+        setRateLimit({ canCreate: false, remaining: 0, resetAt: err.resetAt });
+      } else if (err.message === "MODERATION_REJECTED") {
+        const whichImage =
+          err.rejectedImage === "both"
+            ? "One or more of your images"
+            : `Outfit ${err.rejectedImage}`;
+        setError(
+          `${whichImage} couldn't be posted because it may contain content that doesn't meet our community guidelines. Please try different photos.`
+        );
+        showToast("Image rejected by moderation", "error");
       } else {
-        setError(err.message || 'Failed to create poll. Please try again.')
-        showToast('Failed to create poll', 'error')
+        setError(err.message || "Failed to create poll. Please try again.");
+        showToast("Failed to create poll", "error");
       }
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -147,7 +160,11 @@ export default function CreatePoll() {
           <div
             key={s}
             className={`h-2 rounded-full transition-all ${
-              s === step ? 'w-8 bg-primary' : s < step ? 'w-2 bg-primary' : 'w-2 bg-gray-300 dark:bg-gray-600'
+              s === step
+                ? "w-8 bg-primary"
+                : s < step
+                ? "w-2 bg-primary"
+                : "w-2 bg-gray-300 dark:bg-gray-600"
             }`}
           />
         ))}
@@ -157,21 +174,21 @@ export default function CreatePoll() {
       {step === 1 && (
         <div className="space-y-6">
           <div className="text-center">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="font-geist text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
               What's your gender?
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">
+            <p className="font-geist text-gray-500 dark:text-gray-400 mt-2">
               This helps us show your poll to the right voters
             </p>
           </div>
 
           <GenderSelect
             value={formData.gender}
-            onChange={(value) => updateForm('gender', value)}
+            onChange={(value) => updateForm("gender", value)}
           />
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="font-geist block text-sm font-medium text-gray-700 dark:text-gray-300">
               Body type (optional)
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
@@ -179,11 +196,11 @@ export default function CreatePoll() {
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => updateForm('bodyType', option.value)}
-                  className={`py-2 px-3 rounded-lg border transition-all text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 ${
+                  onClick={() => updateForm("bodyType", option.value)}
+                  className={`font-geist py-2 px-3 rounded-lg border transition-all text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 ${
                     formData.bodyType === option.value
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300"
                   }`}
                 >
                   {option.label}
@@ -198,10 +215,10 @@ export default function CreatePoll() {
       {step === 2 && (
         <div className="space-y-6">
           <div className="text-center">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="font-geist text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
               Upload your outfits
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">
+            <p className="font-geist text-gray-500 dark:text-gray-400 mt-2">
               Add two outfit photos to compare
             </p>
           </div>
@@ -210,16 +227,16 @@ export default function CreatePoll() {
             <ImageUpload
               label="Outfit A"
               value={formData.imageA}
-              onChange={(value) => updateForm('imageA', value)}
+              onChange={(value) => updateForm("imageA", value)}
             />
             <ImageUpload
               label="Outfit B"
               value={formData.imageB}
-              onChange={(value) => updateForm('imageB', value)}
+              onChange={(value) => updateForm("imageB", value)}
             />
           </div>
 
-          <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+          <p className="font-geist text-xs text-gray-400 dark:text-gray-500 text-center">
             Images must be JPEG or PNG, max 5MB each
           </p>
         </div>
@@ -229,17 +246,17 @@ export default function CreatePoll() {
       {step === 3 && (
         <div className="space-y-6">
           <div className="text-center">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="font-geist text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
               Almost done!
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">
+            <p className="font-geist text-gray-500 dark:text-gray-400 mt-2">
               Choose your poll settings
             </p>
           </div>
 
           {/* Context selection */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 text-center">
+            <label className="font-geist block text-sm font-medium text-gray-700 dark:text-gray-300 text-center">
               Context (optional)
             </label>
             <div className="flex flex-wrap gap-2 md:gap-3 justify-center">
@@ -247,11 +264,16 @@ export default function CreatePoll() {
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => updateForm('context', formData.context === option.value ? '' : option.value)}
-                  className={`py-2 px-4 rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 ${
+                  onClick={() =>
+                    updateForm(
+                      "context",
+                      formData.context === option.value ? "" : option.value
+                    )
+                  }
+                  className={`font-geist py-2 px-4 rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 ${
                     formData.context === option.value
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300"
                   }`}
                 >
                   {option.label}
@@ -262,7 +284,7 @@ export default function CreatePoll() {
 
           {/* Duration selection */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 text-center">
+            <label className="font-geist block text-sm font-medium text-gray-700 dark:text-gray-300 text-center">
               Poll duration
             </label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
@@ -270,17 +292,25 @@ export default function CreatePoll() {
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => updateForm('duration', option.value)}
-                  className={`py-3 px-4 rounded-xl border transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 ${
+                  onClick={() => updateForm("duration", option.value)}
+                  className={`font-geist py-3 px-4 rounded-xl border transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 ${
                     formData.duration === option.value
-                      ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
+                      ? "border-primary bg-primary/10"
+                      : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600"
                   }`}
                 >
-                  <div className={`font-medium ${formData.duration === option.value ? 'text-primary' : 'text-gray-900 dark:text-gray-100'}`}>
+                  <div
+                    className={`font-geist font-medium ${
+                      formData.duration === option.value
+                        ? "text-primary"
+                        : "text-gray-900 dark:text-gray-100"
+                    }`}
+                  >
                     {option.label}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">{option.description}</div>
+                  <div className="font-geist text-xs text-gray-500 dark:text-gray-400">
+                    {option.description}
+                  </div>
                 </button>
               ))}
             </div>
@@ -288,7 +318,9 @@ export default function CreatePoll() {
 
           {/* Preview */}
           <div className="space-y-2">
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">Preview</p>
+            <p className="font-geist text-sm text-gray-500 dark:text-gray-400 text-center">
+              Preview
+            </p>
             <div className="grid grid-cols-2 gap-2 md:gap-4">
               {formData.imageA && (
                 <div className="relative aspect-[3/4] rounded-xl overflow-hidden">
@@ -297,7 +329,7 @@ export default function CreatePoll() {
                     alt="Outfit A"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute top-2 left-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-xs font-bold">
+                  <div className="font-geist absolute top-2 left-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-xs font-bold">
                     A
                   </div>
                 </div>
@@ -309,7 +341,7 @@ export default function CreatePoll() {
                     alt="Outfit B"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute top-2 left-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-xs font-bold">
+                  <div className="font-geist absolute top-2 left-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-xs font-bold">
                     B
                   </div>
                 </div>
@@ -321,7 +353,7 @@ export default function CreatePoll() {
 
       {/* Error message */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
+        <div className="font-geist p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
           {error}
         </div>
       )}
@@ -330,12 +362,17 @@ export default function CreatePoll() {
       {!rateLimitLoading && step === 3 && (
         <div className="text-center">
           {rateLimit.canCreate ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {rateLimit.remaining} {rateLimit.remaining === 1 ? 'poll' : 'polls'} remaining today
+            <p className="font-geist text-sm text-gray-500 dark:text-gray-400">
+              {rateLimit.remaining}{" "}
+              {rateLimit.remaining === 1 ? "poll" : "polls"} remaining today
             </p>
           ) : (
-            <p className="text-sm text-orange-600">
-              Daily limit reached. Try again {rateLimit.resetAt ? `after ${formatResetTime(rateLimit.resetAt)}` : 'tomorrow'}.
+            <p className="font-geist text-sm text-orange-600">
+              Daily limit reached. Try again{" "}
+              {rateLimit.resetAt
+                ? `after ${formatResetTime(rateLimit.resetAt)}`
+                : "tomorrow"}
+              .
             </p>
           )}
         </div>
@@ -347,31 +384,47 @@ export default function CreatePoll() {
           <button
             onClick={handleBack}
             disabled={isSubmitting}
-            className="flex-1 py-3 px-6 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-colors disabled:opacity-50"
+            className="font-geist flex-1 py-3 px-6 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl border-2 border-gray-200 dark:border-gray-700 transition-colors disabled:opacity-50"
           >
             Back
           </button>
         )}
         <button
           onClick={handleNext}
-          disabled={!canProceed() || isSubmitting || (step === 3 && !rateLimit.canCreate)}
-          className="flex-1 py-3 px-6 bg-primary hover:bg-primary-dark text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={
+            !canProceed() ||
+            isSubmitting ||
+            (step === 3 && !rateLimit.canCreate)
+          }
+          className="font-geist flex-1 py-3 px-6 bg-primary hover:bg-primary-dark text-white font-semibold rounded-xl border-2 border-gray-200 dark:border-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">
               <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               Posting...
             </span>
           ) : step === 3 ? (
-            'Post Poll'
+            "Post Poll"
           ) : (
-            'Continue'
+            "Continue"
           )}
         </button>
       </div>
     </div>
-  )
+  );
 }

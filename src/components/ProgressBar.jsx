@@ -3,20 +3,26 @@ export default function ProgressBar({
   percent,
   votes,
   isWinner = false,
-  color = 'primary'
+  color = "primary",
 }) {
   const colorClasses = {
-    primary: 'bg-primary',
-    secondary: 'bg-secondary',
-  }
+    primary: "bg-primary",
+    secondary: "bg-secondary",
+  };
 
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
-        <span className={`font-medium ${isWinner ? 'text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'}`}>
-          {label} {isWinner && '✓'}
+        <span
+          className={`font-geist font-medium ${
+            isWinner
+              ? "text-green-600 dark:text-green-400"
+              : "text-gray-700 dark:text-gray-300"
+          }`}
+        >
+          {label} {isWinner && "✓"}
         </span>
-        <span className="text-gray-500 dark:text-gray-400">
+        <span className="font-geist text-gray-500 dark:text-gray-400">
           {percent}% ({votes})
         </span>
       </div>
@@ -27,5 +33,5 @@ export default function ProgressBar({
         />
       </div>
     </div>
-  )
+  );
 }

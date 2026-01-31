@@ -58,8 +58,7 @@ a {
 /* Dark mode body overrides */
 .dark body {
   @apply bg-gray-950 text-gray-100;
-  background-image:
-    linear-gradient(to right, #1f2937 1px, transparent 1px),
+  background-image: linear-gradient(to right, #1f2937 1px, transparent 1px),
     linear-gradient(to bottom, #1f2937 1px, transparent 1px);
 }
 

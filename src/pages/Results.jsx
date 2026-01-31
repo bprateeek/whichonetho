@@ -16,13 +16,13 @@ export default function Results() {
   const [error, setError] = useState(null);
 
   // Dynamic meta tags for sharing
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const shareTitle = poll
     ? `Vote on my outfit poll - WhichOneTho`
-    : 'WhichOneTho - Outfit Opinions';
+    : "WhichOneTho - Outfit Opinions";
   const shareDescription = poll?.context
     ? `Help me decide which outfit is better for ${poll.context}!`
-    : 'Help me decide which outfit is better!';
+    : "Help me decide which outfit is better!";
 
   useMetaTags({
     title: shareTitle,
@@ -87,13 +87,15 @@ export default function Results() {
   if (error || !poll) {
     return (
       <div className="text-center space-y-4 py-12">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Poll not found</h1>
-        <p className="text-gray-500 dark:text-gray-400">
+        <h1 className="font-geist text-2xl font-bold text-gray-900 dark:text-gray-100">
+          Poll not found
+        </h1>
+        <p className="font-geist text-gray-500 dark:text-gray-400">
           This poll may have expired or been removed.
         </p>
         <Link
           to="/"
-          className="inline-block py-3 px-6 bg-primary text-white font-semibold rounded-xl"
+          className="font-geist inline-block py-3 px-6 bg-primary text-white font-semibold rounded-xl"
         >
           Back to Home
         </Link>
@@ -127,7 +129,7 @@ export default function Results() {
       {/* Final Results Badge (when expired) */}
       {isExpired && (
         <div className="flex justify-center">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-full">
+          <span className="font-geist inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-full">
             <svg
               className="w-4 h-4"
               fill="none"
@@ -148,7 +150,7 @@ export default function Results() {
 
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="font-geist text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
           {totalVotes === 0
             ? "Waiting for votes..."
             : winner
@@ -156,7 +158,7 @@ export default function Results() {
             : "It's a tie!"}
         </h1>
         {winner && totalVotes > 0 && (
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
+          <p className="font-geist text-gray-500 dark:text-gray-400 mt-1">
             {winnerPercent}% of voters prefer this look
           </p>
         )}
@@ -168,9 +170,11 @@ export default function Results() {
       {/* Status */}
       <div className="text-center">
         {isExpired ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">This poll has ended</p>
+          <p className="font-geist text-sm text-gray-500 dark:text-gray-400">
+            This poll has ended
+          </p>
         ) : (
-          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+          <p className="font-geist text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
             <span>Time remaining:</span>
             <CountdownTimer expiresAt={poll.expires_at} />
             <span>· Votes update in real-time</span>
@@ -179,17 +183,13 @@ export default function Results() {
       </div>
 
       {/* Share Options */}
-      <ShareButtons
-        url={shareUrl}
-        title={shareTitle}
-        text={shareDescription}
-      />
+      <ShareButtons url={shareUrl} title={shareTitle} text={shareDescription} />
 
       {/* Actions */}
       <div>
         <Link
           to="/create"
-          className="block w-full py-3 px-6 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl text-center transition-colors"
+          className="font-geist block w-full py-3 px-6 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 font-medium rounded-xl text-center transition-colors"
         >
           Post Another Poll
         </Link>
