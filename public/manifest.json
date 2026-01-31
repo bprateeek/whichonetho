@@ -1,0 +1,16 @@
+{
+  "name": "WhichOneTho",
+  "short_name": "WhichOneTho",
+  "description": "Get honest outfit opinions from the opposite gender. Post anonymously, vote honestly.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F9FAFB",
+  "theme_color": "#8B5CF6",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
