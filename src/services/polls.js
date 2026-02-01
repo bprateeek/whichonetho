@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { compressImage, deleteImages } from './storage'
 import { moderateAndUploadImages, ModerationError } from './moderation'
-import { getVoterHash } from './votes'
+import { getVoterHash, getUserIdentifier } from './votes'
 
 /**
  * Create a new poll with images
@@ -16,7 +16,7 @@ import { getVoterHash } from './votes'
  */
 export async function createPoll({ posterGender, bodyType, context, duration = 60, imageAFile, imageBFile }) {
   // Check rate limit first
-  const creatorHash = await getVoterHash()
+  const { user_id, voter_ip_hash: creatorHash } = await getUserIdentifier()
   const rateLimit = await checkPollRateLimit()
 
   if (!rateLimit.canCreate) {
@@ -50,6 +50,7 @@ export async function createPoll({ posterGender, bodyType, context, duration = 6
         context: context || null,
         image_a_url: imageAUrl,
         image_b_url: imageBUrl,
+        user_id,
         creator_ip_hash: creatorHash,
         expires_at: expiresAt,
       })
@@ -63,7 +64,7 @@ export async function createPoll({ posterGender, bodyType, context, duration = 6
     }
 
     // Log poll creation for rate limiting
-    await logPollCreation(creatorHash)
+    await logPollCreation(user_id, creatorHash)
 
     return data
   } catch (error) {
@@ -89,6 +90,9 @@ export async function getPollById(pollId) {
         total_votes,
         votes_a,
         votes_b
+      ),
+      user_profiles (
+        username
       )
     `)
     .eq('id', pollId)
@@ -98,12 +102,13 @@ export async function getPollById(pollId) {
     throw new Error(`Failed to fetch poll: ${error.message}`)
   }
 
-  // Flatten the vote counts
+  // Flatten the vote counts and include username
   return {
     ...data,
     votes_a: data.vote_counts?.votes_a || 0,
     votes_b: data.vote_counts?.votes_b || 0,
     total_votes: data.vote_counts?.total_votes || 0,
+    username: data.user_profiles?.username || null,
   }
 }
 
@@ -115,7 +120,7 @@ export async function getPollById(pollId) {
  * @returns {Promise<Array>} - List of polls
  */
 export async function getActivePolls(voterGender, limit = 20, reportedPollIds = []) {
-  const voterHash = await getVoterHash()
+  const { user_id, voter_ip_hash: voterHash } = await getUserIdentifier()
 
   // Build the query for opposite gender polls
   let query = supabase
@@ -126,6 +131,9 @@ export async function getActivePolls(voterGender, limit = 20, reportedPollIds = 
         total_votes,
         votes_a,
         votes_b
+      ),
+      user_profiles (
+        username
       )
     `)
     .eq('status', 'active')
@@ -144,11 +152,14 @@ export async function getActivePolls(voterGender, limit = 20, reportedPollIds = 
     throw new Error(`Failed to fetch polls: ${error.message}`)
   }
 
-  // Get polls the user has already voted on
-  const { data: votedPolls } = await supabase
-    .from('votes')
-    .select('poll_id')
-    .eq('voter_ip_hash', voterHash)
+  // Get polls the user has already voted on (check by user_id or voter_ip_hash)
+  let votedQuery = supabase.from('votes').select('poll_id')
+  if (user_id) {
+    votedQuery = votedQuery.eq('user_id', user_id)
+  } else {
+    votedQuery = votedQuery.eq('voter_ip_hash', voterHash)
+  }
+  const { data: votedPolls } = await votedQuery
 
   const votedPollIds = new Set(votedPolls?.map(v => v.poll_id) || [])
   const reportedSet = new Set(reportedPollIds)
@@ -161,6 +172,7 @@ export async function getActivePolls(voterGender, limit = 20, reportedPollIds = 
       votes_a: poll.vote_counts?.votes_a || 0,
       votes_b: poll.vote_counts?.votes_b || 0,
       total_votes: poll.vote_counts?.total_votes || 0,
+      username: poll.user_profiles?.username || null,
     }))
 }
 
@@ -172,7 +184,7 @@ export async function getActivePolls(voterGender, limit = 20, reportedPollIds = 
  * @returns {Promise<Array>} - List of polls
  */
 export async function getPollsByGender(posterGender, limit = 20, reportedPollIds = []) {
-  const voterHash = await getVoterHash()
+  const { user_id, voter_ip_hash: voterHash } = await getUserIdentifier()
 
   const { data: polls, error } = await supabase
     .from('polls')
@@ -182,6 +194,9 @@ export async function getPollsByGender(posterGender, limit = 20, reportedPollIds
         total_votes,
         votes_a,
         votes_b
+      ),
+      user_profiles (
+        username
       )
     `)
     .eq('status', 'active')
@@ -194,11 +209,14 @@ export async function getPollsByGender(posterGender, limit = 20, reportedPollIds
     throw new Error(`Failed to fetch polls: ${error.message}`)
   }
 
-  // Get polls the user has already voted on
-  const { data: votedPolls } = await supabase
-    .from('votes')
-    .select('poll_id')
-    .eq('voter_ip_hash', voterHash)
+  // Get polls the user has already voted on (check by user_id or voter_ip_hash)
+  let votedQuery = supabase.from('votes').select('poll_id')
+  if (user_id) {
+    votedQuery = votedQuery.eq('user_id', user_id)
+  } else {
+    votedQuery = votedQuery.eq('voter_ip_hash', voterHash)
+  }
+  const { data: votedPolls } = await votedQuery
 
   const votedPollIds = new Set(votedPolls?.map(v => v.poll_id) || [])
   const reportedSet = new Set(reportedPollIds)
@@ -211,6 +229,7 @@ export async function getPollsByGender(posterGender, limit = 20, reportedPollIds
       votes_a: poll.vote_counts?.votes_a || 0,
       votes_b: poll.vote_counts?.votes_b || 0,
       total_votes: poll.vote_counts?.total_votes || 0,
+      username: poll.user_profiles?.username || null,
     }))
 }
 
@@ -222,18 +241,26 @@ const POLLS_PER_DAY_LIMIT = 5
  * @returns {Promise<{canCreate: boolean, remaining: number, resetAt: Date}>}
  */
 export async function checkPollRateLimit() {
-  const creatorHash = await getVoterHash()
+  const { user_id, voter_ip_hash: creatorHash } = await getUserIdentifier()
 
   // Get the start of today (24 hours ago)
   const twentyFourHoursAgo = new Date()
   twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24)
 
-  const { data, error } = await supabase
+  // Query by user_id if authenticated, otherwise by creator_ip_hash
+  let query = supabase
     .from('poll_creation_log')
     .select('created_at')
-    .eq('creator_ip_hash', creatorHash)
     .gte('created_at', twentyFourHoursAgo.toISOString())
     .order('created_at', { ascending: true })
+
+  if (user_id) {
+    query = query.eq('user_id', user_id)
+  } else {
+    query = query.eq('creator_ip_hash', creatorHash)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     console.error('Failed to check rate limit:', error)
@@ -257,12 +284,16 @@ export async function checkPollRateLimit() {
 
 /**
  * Log a poll creation for rate limiting purposes
- * @param {string} creatorHash - The creator's IP hash
+ * @param {string|null} userId - The creator's user ID (if authenticated)
+ * @param {string|null} creatorHash - The creator's IP hash (if anonymous)
  */
-async function logPollCreation(creatorHash) {
+async function logPollCreation(userId, creatorHash) {
   const { error } = await supabase
     .from('poll_creation_log')
-    .insert({ creator_ip_hash: creatorHash })
+    .insert({
+      user_id: userId,
+      creator_ip_hash: creatorHash,
+    })
 
   if (error) {
     console.error('Failed to log poll creation:', error)
@@ -276,9 +307,9 @@ async function logPollCreation(creatorHash) {
  * @returns {Promise<Array>} - List of polls with vote counts
  */
 export async function getUserCreatedPolls(limit = 50) {
-  const creatorHash = await getVoterHash()
+  const { user_id, voter_ip_hash: creatorHash } = await getUserIdentifier()
 
-  const { data: polls, error } = await supabase
+  let query = supabase
     .from('polls')
     .select(`
       *,
@@ -286,11 +317,22 @@ export async function getUserCreatedPolls(limit = 50) {
         total_votes,
         votes_a,
         votes_b
+      ),
+      user_profiles (
+        username
       )
     `)
-    .eq('creator_ip_hash', creatorHash)
     .order('created_at', { ascending: false })
     .limit(limit)
+
+  // Query by user_id if authenticated, otherwise by creator_ip_hash
+  if (user_id) {
+    query = query.eq('user_id', user_id)
+  } else {
+    query = query.eq('creator_ip_hash', creatorHash)
+  }
+
+  const { data: polls, error } = await query
 
   if (error) {
     throw new Error(`Failed to fetch created polls: ${error.message}`)
@@ -301,6 +343,7 @@ export async function getUserCreatedPolls(limit = 50) {
     votes_a: poll.vote_counts?.votes_a || 0,
     votes_b: poll.vote_counts?.votes_b || 0,
     total_votes: poll.vote_counts?.total_votes || 0,
+    username: poll.user_profiles?.username || null,
   }))
 }
 
@@ -310,10 +353,10 @@ export async function getUserCreatedPolls(limit = 50) {
  * @returns {Promise<Array>} - List of polls with the user's vote choice
  */
 export async function getUserVotedPolls(limit = 50) {
-  const voterHash = await getVoterHash()
+  const { user_id, voter_ip_hash: voterHash } = await getUserIdentifier()
 
-  // Get votes with their associated polls
-  const { data: votes, error } = await supabase
+  // Build query - get votes with their associated polls
+  let query = supabase
     .from('votes')
     .select(`
       voted_for,
@@ -327,16 +370,28 @@ export async function getUserVotedPolls(limit = 50) {
         status,
         expires_at,
         created_at,
+        user_id,
         vote_counts (
           total_votes,
           votes_a,
           votes_b
+        ),
+        user_profiles (
+          username
         )
       )
     `)
-    .eq('voter_ip_hash', voterHash)
     .order('created_at', { ascending: false })
     .limit(limit)
+
+  // Query by user_id if authenticated, otherwise by voter_ip_hash
+  if (user_id) {
+    query = query.eq('user_id', user_id)
+  } else {
+    query = query.eq('voter_ip_hash', voterHash)
+  }
+
+  const { data: votes, error } = await query
 
   if (error) {
     throw new Error(`Failed to fetch voted polls: ${error.message}`)
@@ -350,6 +405,7 @@ export async function getUserVotedPolls(limit = 50) {
       votes_a: v.poll.vote_counts?.votes_a || 0,
       votes_b: v.poll.vote_counts?.votes_b || 0,
       total_votes: v.poll.vote_counts?.total_votes || 0,
+      username: v.poll.user_profiles?.username || null,
       userVote: v.voted_for,
       votedAt: v.created_at,
     }))

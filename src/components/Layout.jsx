@@ -1,9 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
 
 export default function Layout({ children }) {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { isAuthenticated, profile, isLoading } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -96,6 +98,16 @@ export default function Layout({ children }) {
               </Link>
             )}
             <Link
+              to="/analytics"
+              className={`font-geist text-sm ${
+                location.pathname === "/analytics"
+                  ? "text-primary font-medium"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+            >
+              Analytics
+            </Link>
+            <Link
               to="/history"
               className={`font-geist text-sm ${
                 location.pathname === "/history"
@@ -105,6 +117,31 @@ export default function Layout({ children }) {
             >
               History
             </Link>
+            {/* Auth UI */}
+            {!isLoading && (
+              isAuthenticated ? (
+                <Link
+                  to="/profile"
+                  className={`font-geist text-sm flex items-center gap-1.5 ${
+                    location.pathname === "/profile"
+                      ? "text-primary font-medium"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  }`}
+                >
+                  <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
+                    {profile?.username?.[0]?.toUpperCase() || "U"}
+                  </span>
+                  <span className="hidden sm:inline">@{profile?.username || "user"}</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  className="font-geist text-sm py-1.5 px-3 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
+                >
+                  Sign In
+                </Link>
+              )
+            )}
           </div>
         </div>
       </header>

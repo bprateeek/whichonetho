@@ -164,14 +164,11 @@ export default function Results() {
         )}
       </div>
 
-      {/* Poll with results */}
-      <PollCard poll={poll} showResults={true} votedFor={userVote} />
-
       {/* Status */}
       <div className="text-center">
         {isExpired ? (
-          <p className="font-geist text-sm text-gray-500 dark:text-gray-400">
-            This poll has ended
+          <p className="font-geist text-gray-500 dark:text-gray-400">
+            Poll Ended
           </p>
         ) : (
           <p className="font-geist text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
@@ -181,6 +178,9 @@ export default function Results() {
           </p>
         )}
       </div>
+
+      {/* Poll with results */}
+      <PollCard poll={poll} showResults={true} votedFor={userVote} />
 
       {/* Share Options */}
       <ShareButtons url={shareUrl} title={shareTitle} text={shareDescription} />

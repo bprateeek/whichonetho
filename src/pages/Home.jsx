@@ -30,9 +30,6 @@ export default function Home() {
 
       {/* Demo poll */}
       <div className="space-y-2">
-        <p className="font-geist text-sm text-gray-500 text-center">
-          Example poll
-        </p>
         <PollCard poll={demoPoll} showResults={true} />
       </div>
 

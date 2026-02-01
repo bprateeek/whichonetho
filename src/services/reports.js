@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { getVoterHash } from './votes'
+import { getUserIdentifier } from './votes'
 
 // Storage key for locally reported polls
 const REPORTED_POLLS_KEY = 'whichonetho_reported_polls'
@@ -42,12 +42,13 @@ function addToLocalReportedList(pollId) {
  * @returns {Promise<{success: boolean, alreadyReported?: boolean}>}
  */
 export async function reportPoll(pollId, reason) {
-  const reporterHash = await getVoterHash()
+  const { user_id, voter_ip_hash: reporterHash } = await getUserIdentifier()
 
   const { error } = await supabase
     .from('poll_reports')
     .insert({
       poll_id: pollId,
+      user_id,
       reporter_ip_hash: reporterHash,
       reason,
     })
