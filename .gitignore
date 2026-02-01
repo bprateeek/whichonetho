@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+#tasks implementation
+to-be-implemented.md
+
 # LLM files
 CLAUDE.md
 project-context.md

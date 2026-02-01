@@ -30,15 +30,24 @@ export default function PollCard({
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg dark:shadow-gray-900/50 overflow-hidden border border-gray-200 dark:border-gray-700">
-      {/* Header with context and report */}
+      {/* Header with username, context and report */}
       <div className="flex items-center justify-between px-4 pt-4">
-        {poll.context ? (
-          <span className="font-geist inline-block px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-sm rounded-full capitalize">
-            {poll.context}
+        <div className="flex items-center gap-2">
+          {/* Username */}
+          <span className="font-geist text-sm text-gray-500 dark:text-gray-400">
+            {poll.username ? (
+              <span className="font-medium text-gray-700 dark:text-gray-300">@{poll.username}</span>
+            ) : (
+              "Anonymous"
+            )}
           </span>
-        ) : (
-          <span />
-        )}
+          {/* Context badge */}
+          {poll.context && (
+            <span className="font-geist inline-block px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full capitalize">
+              {poll.context}
+            </span>
+          )}
+        </div>
         {onReport && (
           <button
             onClick={() => onReport(poll.id)}

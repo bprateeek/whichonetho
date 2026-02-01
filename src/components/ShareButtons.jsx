@@ -50,8 +50,8 @@ export default function ShareButtons({ url, title, text }) {
 
   return (
     <div className="space-y-2">
-      <p className="font-geist text-sm text-gray-500 dark:text-gray-400 text-center">
-        Share your poll
+      <p className="font-geist font-semibold text-left rtl:text-right text-gray-500 dark:text-gray-400">
+        Share:
       </p>
 
       {/* Native Share Button (mobile) */}

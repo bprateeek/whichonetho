@@ -4,6 +4,22 @@ import { supabase } from './supabase'
 const VOTER_HASH_KEY = 'whichonetho_voter_hash'
 
 /**
+ * Get user identifier for database operations
+ * Returns user_id if authenticated, or voter_ip_hash if anonymous
+ * @returns {Promise<{user_id: string|null, voter_ip_hash: string|null}>}
+ */
+export async function getUserIdentifier() {
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (user?.id) {
+    return { user_id: user.id, voter_ip_hash: null }
+  }
+
+  const hash = await getVoterHash()
+  return { user_id: null, voter_ip_hash: hash }
+}
+
+/**
  * Generate or retrieve a consistent voter hash for this browser
  * Uses localStorage to persist across sessions
  * @returns {Promise<string>} - The voter hash
@@ -36,7 +52,7 @@ export async function getVoterHash() {
  * @returns {Promise<{success: boolean, alreadyVoted?: boolean}>}
  */
 export async function castVote(pollId, choice, voterGender) {
-  const voterHash = await getVoterHash()
+  const { user_id, voter_ip_hash } = await getUserIdentifier()
 
   const { error } = await supabase
     .from('votes')
@@ -44,7 +60,8 @@ export async function castVote(pollId, choice, voterGender) {
       poll_id: pollId,
       voted_for: choice,
       voter_gender: voterGender,
-      voter_ip_hash: voterHash,
+      user_id,
+      voter_ip_hash,
     })
 
   if (error) {
@@ -64,14 +81,21 @@ export async function castVote(pollId, choice, voterGender) {
  * @returns {Promise<{hasVoted: boolean, votedFor?: 'A' | 'B'}>}
  */
 export async function hasVoted(pollId) {
-  const voterHash = await getVoterHash()
+  const { user_id, voter_ip_hash } = await getUserIdentifier()
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('votes')
     .select('voted_for')
     .eq('poll_id', pollId)
-    .eq('voter_ip_hash', voterHash)
-    .maybeSingle()
+
+  // Check by user_id if authenticated, otherwise by voter_ip_hash
+  if (user_id) {
+    query = query.eq('user_id', user_id)
+  } else {
+    query = query.eq('voter_ip_hash', voter_ip_hash)
+  }
+
+  const { data, error } = await query.maybeSingle()
 
   if (error) {
     throw new Error(`Failed to check vote status: ${error.message}`)
