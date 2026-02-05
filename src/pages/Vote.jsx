@@ -102,7 +102,6 @@ export default function Vote() {
 
       if (result.alreadyVoted) {
         // Skip to next poll if already voted
-        console.log("Already voted on this poll");
       }
 
       setVoteCount((prev) => prev + 1);
