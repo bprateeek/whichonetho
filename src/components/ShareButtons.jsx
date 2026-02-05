@@ -1,7 +1,6 @@
-import { useToast } from "../context/ToastContext";
+import { toast } from "../lib/toast";
 
 export default function ShareButtons({ url, title, text }) {
-  const { showToast } = useToast();
   const canShare = typeof navigator !== "undefined" && navigator.share;
 
   const handleNativeShare = async () => {
@@ -22,9 +21,9 @@ export default function ShareButtons({ url, title, text }) {
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(url);
-      showToast("Link copied to clipboard!", "success");
+      toast.success("Link copied to clipboard!");
     } catch (err) {
-      showToast("Failed to copy link", "error");
+      toast.error("Failed to copy link");
     }
   };
 

@@ -90,9 +90,6 @@ export async function getPollById(pollId) {
         total_votes,
         votes_a,
         votes_b
-      ),
-      user_profiles (
-        username
       )
     `)
     .eq('id', pollId)
@@ -102,19 +99,19 @@ export async function getPollById(pollId) {
     throw new Error(`Failed to fetch poll: ${error.message}`)
   }
 
-  // Flatten the vote counts and include username
+  // Flatten the vote counts
   return {
     ...data,
     votes_a: data.vote_counts?.votes_a || 0,
     votes_b: data.vote_counts?.votes_b || 0,
     total_votes: data.vote_counts?.total_votes || 0,
-    username: data.user_profiles?.username || null,
+    username: null,
   }
 }
 
 /**
  * Get active polls for the voting feed
- * @param {string} voterGender - The voter's gender (to show opposite gender polls)
+ * @param {string} voterGender - The voter's gender (to filter which polls to show)
  * @param {number} [limit=20] - Max number of polls to fetch
  * @param {string[]} [reportedPollIds=[]] - Poll IDs to exclude (locally reported)
  * @returns {Promise<Array>} - List of polls
@@ -122,7 +119,7 @@ export async function getPollById(pollId) {
 export async function getActivePolls(voterGender, limit = 20, reportedPollIds = []) {
   const { user_id, voter_ip_hash: voterHash } = await getUserIdentifier()
 
-  // Build the query for opposite gender polls
+  // Build the query for polls to vote on
   let query = supabase
     .from('polls')
     .select(`
@@ -131,9 +128,6 @@ export async function getActivePolls(voterGender, limit = 20, reportedPollIds = 
         total_votes,
         votes_a,
         votes_b
-      ),
-      user_profiles (
-        username
       )
     `)
     .eq('status', 'active')
@@ -141,7 +135,7 @@ export async function getActivePolls(voterGender, limit = 20, reportedPollIds = 
     .order('created_at', { ascending: false })
     .limit(limit)
 
-  // Filter by opposite gender (if not viewing all)
+  // Filter by poster gender (if not viewing all)
   if (voterGender && voterGender !== 'all') {
     query = query.neq('poster_gender', voterGender)
   }
@@ -172,7 +166,7 @@ export async function getActivePolls(voterGender, limit = 20, reportedPollIds = 
       votes_a: poll.vote_counts?.votes_a || 0,
       votes_b: poll.vote_counts?.votes_b || 0,
       total_votes: poll.vote_counts?.total_votes || 0,
-      username: poll.user_profiles?.username || null,
+      username: null,
     }))
 }
 
@@ -194,9 +188,6 @@ export async function getPollsByGender(posterGender, limit = 20, reportedPollIds
         total_votes,
         votes_a,
         votes_b
-      ),
-      user_profiles (
-        username
       )
     `)
     .eq('status', 'active')
@@ -229,7 +220,7 @@ export async function getPollsByGender(posterGender, limit = 20, reportedPollIds
       votes_a: poll.vote_counts?.votes_a || 0,
       votes_b: poll.vote_counts?.votes_b || 0,
       total_votes: poll.vote_counts?.total_votes || 0,
-      username: poll.user_profiles?.username || null,
+      username: null,
     }))
 }
 
@@ -317,9 +308,6 @@ export async function getUserCreatedPolls(limit = 50) {
         total_votes,
         votes_a,
         votes_b
-      ),
-      user_profiles (
-        username
       )
     `)
     .order('created_at', { ascending: false })
@@ -343,7 +331,7 @@ export async function getUserCreatedPolls(limit = 50) {
     votes_a: poll.vote_counts?.votes_a || 0,
     votes_b: poll.vote_counts?.votes_b || 0,
     total_votes: poll.vote_counts?.total_votes || 0,
-    username: poll.user_profiles?.username || null,
+    username: null, // Username fetched separately if needed
   }))
 }
 
@@ -375,9 +363,6 @@ export async function getUserVotedPolls(limit = 50) {
           total_votes,
           votes_a,
           votes_b
-        ),
-        user_profiles (
-          username
         )
       )
     `)
@@ -405,7 +390,7 @@ export async function getUserVotedPolls(limit = 50) {
       votes_a: v.poll.vote_counts?.votes_a || 0,
       votes_b: v.poll.vote_counts?.votes_b || 0,
       total_votes: v.poll.vote_counts?.total_votes || 0,
-      username: v.poll.user_profiles?.username || null,
+      username: null, // Username fetched separately if needed
       userVote: v.voted_for,
       votedAt: v.created_at,
     }))

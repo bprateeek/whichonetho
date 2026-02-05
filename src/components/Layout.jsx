@@ -154,7 +154,7 @@ export default function Layout({ children }) {
       {/* Footer */}
       <footer className="bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-700 py-4">
         <div className="font-geist max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
-          Get honest outfit opinions from the opposite gender
+          Get honest outfit opinions from others
         </div>
       </footer>
     </div>

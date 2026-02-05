@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { resetPassword } from "../services/auth";
-import { useToast } from "../context/ToastContext";
+import { toast } from "../lib/toast";
 
 export default function ForgotPassword() {
-  const { showToast } = useToast();
-
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -21,15 +19,15 @@ export default function ForgotPassword() {
 
       if (resetError) {
         setError(resetError.message || "Failed to send reset email");
-        showToast("Failed to send reset email", "error");
+        toast.error("Failed to send reset email");
       } else {
         setIsSubmitted(true);
-        showToast("Reset email sent!", "success");
+        toast.success("Reset email sent!");
       }
     } catch (err) {
       console.error("Reset password error:", err);
       setError("An unexpected error occurred");
-      showToast("Failed to send reset email", "error");
+      toast.error("Failed to send reset email");
     } finally {
       setIsSubmitting(false);
     }

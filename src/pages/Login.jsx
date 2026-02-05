@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { toast } from "../lib/toast";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn } = useAuth();
-  const { showToast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,15 +26,15 @@ export default function Login() {
 
       if (signInError) {
         setError(signInError.message || "Failed to sign in");
-        showToast("Failed to sign in", "error");
+        toast.error("Failed to sign in");
       } else {
-        showToast("Welcome back!", "success");
+        toast.success("Welcome back!");
         navigate(from, { replace: true });
       }
     } catch (err) {
       console.error("Sign in error:", err);
       setError("An unexpected error occurred");
-      showToast("Failed to sign in", "error");
+      toast.error("Failed to sign in");
     } finally {
       setIsSubmitting(false);
     }
