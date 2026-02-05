@@ -65,8 +65,6 @@ export async function migrateAnonymousHistory(userId) {
       console.error('Failed to migrate creation log:', logError)
     }
 
-    console.log(`Migration complete: ${migratedPolls} polls, ${migratedVotes} votes`)
-
     return {
       success: true,
       migratedPolls,

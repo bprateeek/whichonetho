@@ -11,6 +11,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Profile from './pages/Profile'
 import ForgotPassword from './pages/ForgotPassword'
+import NotFound from './pages/NotFound'
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
       </BrowserRouter>
