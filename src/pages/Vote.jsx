@@ -9,10 +9,9 @@ import { getActivePolls, getPollsByGender } from "../services/polls";
 import { castVote } from "../services/votes";
 import { reportPoll, getLocalReportedList } from "../services/reports";
 import { useSwipe } from "../hooks/useSwipe";
-import { useToast } from "../context/ToastContext";
+import { toast } from "../lib/toast";
 
 export default function Vote() {
-  const { showToast } = useToast();
   const [voterGender, setVoterGender] = useState("");
   const [showFilter, setShowFilter] = useState("");
   const [polls, setPolls] = useState([]);
@@ -48,7 +47,7 @@ export default function Vote() {
             reportedPollIds
           );
         } else {
-          // Viewing opposite gender's outfits
+          // Viewing outfits based on voter's gender preference
           fetchedPolls = await getActivePolls(voterGender, 20, reportedPollIds);
         }
         setPolls(fetchedPolls);
@@ -107,7 +106,7 @@ export default function Vote() {
       }
 
       setVoteCount((prev) => prev + 1);
-      showToast(`Voted for Outfit ${votedOption}!`, "success");
+      toast.success(`Voted for Outfit ${votedOption}!`);
 
       // Show results for 1.5 seconds before advancing with transition
       setTimeout(() => {
@@ -126,7 +125,7 @@ export default function Vote() {
       }, 1300);
     } catch (err) {
       console.error("Failed to cast vote:", err);
-      showToast("Failed to submit vote. Please try again.", "error");
+      toast.error("Failed to submit vote. Please try again.");
       setCurrentVote(null);
     } finally {
       setIsVoting(false);
@@ -185,7 +184,7 @@ export default function Vote() {
             What's your gender?
           </h1>
           <p className="font-geist text-gray-500 dark:text-gray-400 mt-2">
-            We'll show you outfits from the opposite gender
+            We'll show you outfits from others to vote on
           </p>
         </div>
 

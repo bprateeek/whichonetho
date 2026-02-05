@@ -22,7 +22,7 @@ export default function Home() {
           Which outfit looks better?
         </h1>
         <p className="font-geist text-gray-600 dark:text-gray-400">
-          Get honest opinions from the opposite gender.
+          Get honest opinions from others.
           <br />
           Post anonymously, vote honestly.
         </p>
@@ -64,13 +64,13 @@ export default function Home() {
           />
           <Step
             number={2}
-            title="Get opposite gender votes"
-            description="Women vote on men's outfits, men vote on women's"
+            title="Get votes from others"
+            description="Post your outfit and let others help you decide"
           />
           <Step
             number={3}
             title="See the winner"
-            description="Get your results in 24 hours"
+            description="Results revealed when your poll expires"
           />
         </div>
       </div>

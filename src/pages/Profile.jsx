@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { toast } from "../lib/toast";
 import { getUserStats } from "../services/analytics";
 import StatsCard from "../components/StatsCard";
 import Spinner from "../components/Spinner";
@@ -9,7 +9,6 @@ import Spinner from "../components/Spinner";
 export default function Profile() {
   const navigate = useNavigate();
   const { user, profile, isLoading: authLoading, signOut } = useAuth();
-  const { showToast } = useToast();
 
   const [stats, setStats] = useState(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
@@ -37,14 +36,14 @@ export default function Profile() {
     try {
       const { error } = await signOut();
       if (error) {
-        showToast("Failed to sign out", "error");
+        toast.error("Failed to sign out");
       } else {
-        showToast("Signed out successfully", "success");
+        toast.success("Signed out successfully");
         navigate("/", { replace: true });
       }
     } catch (err) {
       console.error("Sign out error:", err);
-      showToast("Failed to sign out", "error");
+      toast.error("Failed to sign out");
     } finally {
       setIsSigningOut(false);
     }

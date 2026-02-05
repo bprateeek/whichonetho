@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { toast } from "../lib/toast";
 import { validateUsername, checkUsernameAvailable } from "../services/auth";
 import { migrateAnonymousHistory } from "../services/migration";
 
 export default function Signup() {
   const navigate = useNavigate();
   const { signUp } = useAuth();
-  const { showToast } = useToast();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -92,7 +91,7 @@ export default function Signup() {
 
       if (signUpError) {
         setError(signUpError.message || "Failed to create account");
-        showToast("Failed to create account", "error");
+        toast.error("Failed to create account");
       } else if (user) {
         // Migrate anonymous history to the new user
         try {
@@ -102,13 +101,13 @@ export default function Signup() {
           // Don't block signup on migration failure
         }
 
-        showToast("Account created successfully!", "success");
+        toast.success("Account created successfully!");
         navigate("/", { replace: true });
       }
     } catch (err) {
       console.error("Sign up error:", err);
       setError("An unexpected error occurred");
-      showToast("Failed to create account", "error");
+      toast.error("Failed to create account");
     } finally {
       setIsSubmitting(false);
     }

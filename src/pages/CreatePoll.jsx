@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ImageUpload from "../components/ImageUpload";
 import GenderSelect from "../components/GenderSelect";
 import { createPoll, checkPollRateLimit } from "../services/polls";
-import { useToast } from "../context/ToastContext";
+import { toast } from "../lib/toast";
 
 const contextOptions = [
   { value: "date", label: "Date Night" },
@@ -31,7 +31,6 @@ const bodyTypeOptions = [
 
 export default function CreatePoll() {
   const navigate = useNavigate();
-  const { showToast } = useToast();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -121,7 +120,7 @@ export default function CreatePoll() {
         imageBFile: formData.imageB.file,
       });
 
-      showToast("Poll created successfully!", "success");
+      toast.success("Poll created successfully!");
       // Navigate to the results page for the new poll
       navigate(`/results/${poll.id}`);
     } catch (err) {
@@ -133,7 +132,7 @@ export default function CreatePoll() {
           resetTime ? `after ${resetTime}` : "tomorrow"
         }.`;
         setError(errorMsg);
-        showToast("Daily limit reached", "error");
+        toast.error("Daily limit reached");
         setRateLimit({ canCreate: false, remaining: 0, resetAt: err.resetAt });
       } else if (err.message === "MODERATION_REJECTED") {
         const whichImage =
@@ -143,10 +142,10 @@ export default function CreatePoll() {
         setError(
           `${whichImage} couldn't be posted because it may contain content that doesn't meet our community guidelines. Please try different photos.`
         );
-        showToast("Image rejected by moderation", "error");
+        toast.error("Image rejected by moderation");
       } else {
         setError(err.message || "Failed to create poll. Please try again.");
-        showToast("Failed to create poll", "error");
+        toast.error("Failed to create poll");
       }
       setIsSubmitting(false);
     }
