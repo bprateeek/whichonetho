@@ -63,8 +63,8 @@ export default function Signup() {
     }
 
     // Validate password length
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
       return;
     }
 
@@ -266,9 +266,9 @@ export default function Signup() {
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="new-password"
-            minLength={6}
+            minLength={8}
             className="font-geist w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            placeholder="At least 6 characters"
+            placeholder="At least 8 characters"
           />
         </div>
 

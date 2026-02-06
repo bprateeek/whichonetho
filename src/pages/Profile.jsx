@@ -57,25 +57,6 @@ export default function Profile() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="text-center space-y-4 py-12">
-        <h1 className="font-geist text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Not signed in
-        </h1>
-        <p className="font-geist text-gray-500 dark:text-gray-400">
-          Please sign in to view your profile.
-        </p>
-        <Link
-          to="/login"
-          className="font-geist inline-block py-3 px-6 bg-primary text-white font-semibold rounded-xl"
-        >
-          Sign In
-        </Link>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       {/* Header */}

@@ -1,6 +1,20 @@
 import { supabase } from './supabase'
 
 /**
+ * Map raw Supabase auth error messages to user-friendly messages.
+ * Prevents information leakage (e.g., email enumeration via "User already registered").
+ */
+function sanitizeAuthError(message) {
+  const map = {
+    'Invalid login credentials': 'Invalid email or password',
+    'User already registered': 'An account with this email already exists',
+    'Email not confirmed': 'Please check your email to confirm your account',
+    'Password should be at least 6 characters': 'Password must be at least 8 characters',
+  }
+  return map[message] || 'Something went wrong. Please try again.'
+}
+
+/**
  * Sign up a new user with email, password, and username
  * @param {string} email
  * @param {string} password
@@ -21,7 +35,7 @@ export async function signUp(email, password, username) {
   })
 
   if (authError) {
-    return { user: null, error: authError }
+    return { user: null, error: new Error(sanitizeAuthError(authError.message)) }
   }
 
   if (!authData.user) {
@@ -59,7 +73,7 @@ export async function signIn(email, password) {
   })
 
   if (error) {
-    return { user: null, error }
+    return { user: null, error: new Error(sanitizeAuthError(error.message)) }
   }
 
   return { user: data.user, error: null }

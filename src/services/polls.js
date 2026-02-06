@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { compressImage, deleteImages } from './storage'
 import { moderateAndUploadImages, ModerationError } from './moderation'
-import { getVoterHash, getUserIdentifier } from './votes'
+import { getUserIdentifier } from './votes'
 
 /**
  * Create a new poll with images
@@ -63,8 +63,8 @@ export async function createPoll({ posterGender, bodyType, context, duration = 6
       throw new Error(`Failed to create poll: ${error.message}`)
     }
 
-    // Log poll creation for rate limiting
-    await logPollCreation(user_id, creatorHash)
+    // Note: poll creation is now logged automatically by database trigger
+    // (see migration 004_security_hardening.sql)
 
     return data
   } catch (error) {
@@ -271,25 +271,6 @@ export async function checkPollRateLimit() {
   }
 
   return { canCreate, remaining, resetAt }
-}
-
-/**
- * Log a poll creation for rate limiting purposes
- * @param {string|null} userId - The creator's user ID (if authenticated)
- * @param {string|null} creatorHash - The creator's IP hash (if anonymous)
- */
-async function logPollCreation(userId, creatorHash) {
-  const { error } = await supabase
-    .from('poll_creation_log')
-    .insert({
-      user_id: userId,
-      creator_ip_hash: creatorHash,
-    })
-
-  if (error) {
-    console.error('Failed to log poll creation:', error)
-    // Don't throw - this shouldn't block poll creation
-  }
 }
 
 /**
