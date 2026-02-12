@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
@@ -6,11 +7,27 @@ export default function Layout({ children }) {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { isAuthenticated, profile, isLoading } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMobileMenuOpen(false);
+      }
+    }
+    if (mobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [mobileMenuOpen]);
 
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="border-b border-gray-200/50 dark:border-gray-700/50">
+      <header className="bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-sm">
         <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link
             to="/"
@@ -53,7 +70,8 @@ export default function Layout({ children }) {
             </svg>
             WhichOneTho
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Theme toggle - always visible */}
             <button
               onClick={toggleTheme}
               className="font-geist p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
@@ -89,59 +107,146 @@ export default function Layout({ children }) {
                 </svg>
               )}
             </button>
-            {location.pathname !== "/" && (
+
+            {/* Desktop navigation - hidden on mobile */}
+            <div className="hidden sm:flex items-center gap-4">
+              {location.pathname !== "/" && (
+                <Link
+                  to="/"
+                  className="font-geist text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm"
+                >
+                  Home
+                </Link>
+              )}
               <Link
-                to="/"
-                className="font-geist text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm"
+                to="/analytics"
+                className={`font-geist text-sm ${
+                  location.pathname === "/analytics"
+                    ? "text-primary font-medium"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                }`}
               >
-                Home
+                Analytics
               </Link>
-            )}
-            <Link
-              to="/analytics"
-              className={`font-geist text-sm ${
-                location.pathname === "/analytics"
-                  ? "text-primary font-medium"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              }`}
-            >
-              Analytics
-            </Link>
-            <Link
-              to="/history"
-              className={`font-geist text-sm ${
-                location.pathname === "/history"
-                  ? "text-primary font-medium"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              }`}
-            >
-              History
-            </Link>
-            {/* Auth UI */}
-            {!isLoading && (
-              isAuthenticated ? (
-                <Link
-                  to="/profile"
-                  className={`font-geist text-sm flex items-center gap-1.5 ${
-                    location.pathname === "/profile"
-                      ? "text-primary font-medium"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  }`}
-                >
-                  <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
-                    {profile?.username?.[0]?.toUpperCase() || "U"}
-                  </span>
-                  <span className="hidden sm:inline">@{profile?.username || "user"}</span>
-                </Link>
-              ) : (
-                <Link
-                  to="/login"
-                  className="font-geist text-sm py-1.5 px-3 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
-                >
-                  Sign In
-                </Link>
-              )
-            )}
+              <Link
+                to="/history"
+                className={`font-geist text-sm ${
+                  location.pathname === "/history"
+                    ? "text-primary font-medium"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                }`}
+              >
+                History
+              </Link>
+              {/* Auth UI - Desktop */}
+              {!isLoading && (
+                isAuthenticated ? (
+                  <Link
+                    to="/profile"
+                    className={`font-geist text-sm flex items-center gap-1.5 ${
+                      location.pathname === "/profile"
+                        ? "text-primary font-medium"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    }`}
+                  >
+                    <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
+                      {profile?.username?.[0]?.toUpperCase() || "U"}
+                    </span>
+                    <span>@{profile?.username || "user"}</span>
+                  </Link>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="font-geist text-sm py-1.5 px-3 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                )
+              )}
+            </div>
+
+            {/* Mobile hamburger menu */}
+            <div className="relative sm:hidden" ref={menuRef}>
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Dropdown menu */}
+              {mobileMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                  {location.pathname !== "/" && (
+                    <Link
+                      to="/"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      Home
+                    </Link>
+                  )}
+                  <Link
+                    to="/analytics"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-4 py-2 text-sm ${
+                      location.pathname === "/analytics"
+                        ? "text-primary font-medium bg-primary/5"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    Analytics
+                  </Link>
+                  <Link
+                    to="/history"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-4 py-2 text-sm ${
+                      location.pathname === "/history"
+                        ? "text-primary font-medium bg-primary/5"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    History
+                  </Link>
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                  {!isLoading && (
+                    isAuthenticated ? (
+                      <Link
+                        to="/profile"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm ${
+                          location.pathname === "/profile"
+                            ? "text-primary font-medium bg-primary/5"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        }`}
+                      >
+                        <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
+                          {profile?.username?.[0]?.toUpperCase() || "U"}
+                        </span>
+                        @{profile?.username || "user"}
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/login"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block px-4 py-2 text-sm text-primary font-medium hover:bg-gray-100 dark:hover:bg-gray-800"
+                      >
+                        Sign In
+                      </Link>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -152,7 +257,7 @@ export default function Layout({ children }) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-700 py-4">
+      <footer className="bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-sm py-4">
         <div className="font-geist max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
           Get honest outfit opinions from others
         </div>
