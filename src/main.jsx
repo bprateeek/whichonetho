@@ -6,6 +6,15 @@ import { ThemeProvider } from "./context/ThemeContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import Toaster from "./components/Toaster.jsx";
 
+// Register service worker for PWA
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // Silent fail - SW registration is optional
+    });
+  });
+}
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ThemeProvider>

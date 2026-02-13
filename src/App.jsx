@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
+import InstallPrompt from './components/InstallPrompt'
 import Home from './pages/Home'
 import CreatePoll from './pages/CreatePoll'
 import Vote from './pages/Vote'
@@ -20,6 +21,7 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <InstallPrompt />
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />
