@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ImageUpload from "../components/ImageUpload";
 import GenderSelect from "../components/GenderSelect";
-import { createPoll, checkPollRateLimit } from "../services/polls";
+import { checkPollRateLimit, createPollRecord } from "../services/polls";
+import { compressImage } from "../services/storage";
+import { moderateAndUploadImages } from "../services/moderation";
 import { toast } from "../lib/toast";
 
 const contextOptions = [
@@ -33,6 +35,7 @@ export default function CreatePoll() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState("");
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     gender: "",
@@ -111,17 +114,44 @@ export default function CreatePoll() {
     setError(null);
 
     try {
-      const poll = await createPoll({
+      // Step 1: Check rate limit
+      setSubmissionStatus("Checking rate limit...");
+      const rateLimitCheck = await checkPollRateLimit();
+      if (!rateLimitCheck.canCreate) {
+        const error = new Error("RATE_LIMIT_EXCEEDED");
+        error.resetAt = rateLimitCheck.resetAt;
+        throw error;
+      }
+
+      // Step 2: Compress images
+      setSubmissionStatus("Compressing images...");
+      const [compressedA, compressedB] = await Promise.all([
+        compressImage(formData.imageA.file),
+        compressImage(formData.imageB.file),
+      ]);
+
+      // Step 3: Upload & moderate
+      setSubmissionStatus("Uploading images...");
+      const tempId = crypto.randomUUID();
+      const { imageAUrl, imageBUrl } = await moderateAndUploadImages(
+        compressedA,
+        compressedB,
+        tempId
+      );
+
+      // Step 4: Create poll record
+      setSubmissionStatus("Creating poll...");
+      const poll = await createPollRecord({
         posterGender: formData.gender,
         bodyType: formData.bodyType || null,
         context: formData.context || null,
         duration: formData.duration,
-        imageAFile: formData.imageA.file,
-        imageBFile: formData.imageB.file,
+        imageAUrl,
+        imageBUrl,
+        tempId,
       });
 
       toast.success("Poll created successfully!");
-      // Navigate to the results page for the new poll
       navigate(`/results/${poll.id}`);
     } catch (err) {
       console.error("Failed to create poll:", err);
@@ -147,6 +177,7 @@ export default function CreatePoll() {
         setError(err.message || "Failed to create poll. Please try again.");
         toast.error("Failed to create poll");
       }
+      setSubmissionStatus("");
       setIsSubmitting(false);
     }
   };
@@ -328,7 +359,7 @@ export default function CreatePoll() {
                     alt="Outfit A"
                     className="w-full h-full object-cover"
                   />
-                  <div className="font-geist absolute top-2 left-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-xs font-bold">
+                  <div className="font-geist absolute top-2 left-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-xs font-bold text-gray-900">
                     A
                   </div>
                 </div>
@@ -340,7 +371,7 @@ export default function CreatePoll() {
                     alt="Outfit B"
                     className="w-full h-full object-cover"
                   />
-                  <div className="font-geist absolute top-2 left-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-xs font-bold">
+                  <div className="font-geist absolute top-2 left-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-xs font-bold text-gray-900">
                     B
                   </div>
                 </div>
@@ -415,7 +446,7 @@ export default function CreatePoll() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              Posting...
+              {submissionStatus || "Posting..."}
             </span>
           ) : step === 3 ? (
             "Post Poll"

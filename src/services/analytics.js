@@ -1,15 +1,15 @@
 import { supabase } from './supabase'
-import { getVoterHash } from './votes'
+import { getUserIdentifier } from './votes'
 
 /**
  * Get analytics stats for the current user's polls
  * @returns {Promise<Object>} User stats
  */
 export async function getUserStats() {
-  const userHash = await getVoterHash()
+  const { user_id, voter_ip_hash } = await getUserIdentifier()
 
   // Get user's created polls with vote counts
-  const { data: polls, error: pollsError } = await supabase
+  let pollsQuery = supabase
     .from('polls')
     .select(`
       id,
@@ -22,8 +22,16 @@ export async function getUserStats() {
         votes_b
       )
     `)
-    .eq('creator_ip_hash', userHash)
     .order('created_at', { ascending: false })
+
+  // Query by user_id if authenticated, otherwise by creator_ip_hash
+  if (user_id) {
+    pollsQuery = pollsQuery.eq('user_id', user_id)
+  } else {
+    pollsQuery = pollsQuery.eq('creator_ip_hash', voter_ip_hash)
+  }
+
+  const { data: polls, error: pollsError } = await pollsQuery
 
   if (pollsError) {
     console.error('Failed to fetch user polls:', pollsError)
@@ -31,11 +39,18 @@ export async function getUserStats() {
   }
 
   // Get user's votes
-  const { data: votes, error: votesError } = await supabase
+  let votesQuery = supabase
     .from('votes')
     .select('voted_for, voter_gender, created_at')
-    .eq('voter_ip_hash', userHash)
     .order('created_at', { ascending: false })
+
+  if (user_id) {
+    votesQuery = votesQuery.eq('user_id', user_id)
+  } else {
+    votesQuery = votesQuery.eq('voter_ip_hash', voter_ip_hash)
+  }
+
+  const { data: votes, error: votesError } = await votesQuery
 
   if (votesError) {
     console.error('Failed to fetch user votes:', votesError)
@@ -67,7 +82,6 @@ export async function getUserStats() {
   })
 
   // Votes by gender (for polls user created)
-  const genderVotes = { male: 0, female: 0, nonbinary: 0 }
   // We'd need to join votes to get this - simplified for now
 
   // Recent activity (last 7 days)
@@ -101,13 +115,20 @@ export async function getUserStats() {
  * @returns {Promise<Array>} Vote counts by day
  */
 export async function getVoteTimeline(days = 7) {
-  const userHash = await getVoterHash()
+  const { user_id, voter_ip_hash } = await getUserIdentifier()
 
   // Get user's poll IDs
-  const { data: userPolls } = await supabase
+  let pollsQuery = supabase
     .from('polls')
     .select('id')
-    .eq('creator_ip_hash', userHash)
+
+  if (user_id) {
+    pollsQuery = pollsQuery.eq('user_id', user_id)
+  } else {
+    pollsQuery = pollsQuery.eq('creator_ip_hash', voter_ip_hash)
+  }
+
+  const { data: userPolls } = await pollsQuery
 
   if (!userPolls || userPolls.length === 0) {
     return []

@@ -1,11 +1,43 @@
 import { supabase } from './supabase'
 
-// Storage key for the voter hash
-const VOTER_HASH_KEY = 'whichonetho_voter_hash'
+// In-memory cache for anonymous ID (fetched from cookie via edge function)
+let cachedAnonId = null
+
+/**
+ * Get anonymous ID from server-set cookie (via edge function)
+ * The edge function manages the HttpOnly cookie and returns the ID
+ * @returns {Promise<string>} - The anonymous user ID
+ */
+export async function getAnonId() {
+  // Return cached value if available
+  if (cachedAnonId) return cachedAnonId
+
+  try {
+    const { data, error } = await supabase.functions.invoke('get-anon-id', {
+      method: 'GET',
+    })
+
+    if (error) {
+      console.error('Failed to get anon_id from edge function:', error)
+    }
+
+    if (data?.anon_id) {
+      cachedAnonId = data.anon_id
+      return cachedAnonId
+    }
+  } catch (error) {
+    console.error('Failed to invoke get-anon-id function:', error)
+  }
+
+  // Fallback: generate client-side UUID (shouldn't happen normally)
+  console.warn('Using fallback client-side UUID generation')
+  cachedAnonId = crypto.randomUUID()
+  return cachedAnonId
+}
 
 /**
  * Get user identifier for database operations
- * Returns user_id if authenticated, or voter_ip_hash if anonymous
+ * Returns user_id if authenticated, or voter_ip_hash (anon_id) if anonymous
  * @returns {Promise<{user_id: string|null, voter_ip_hash: string|null}>}
  */
 export async function getUserIdentifier() {
@@ -15,33 +47,8 @@ export async function getUserIdentifier() {
     return { user_id: user.id, voter_ip_hash: null }
   }
 
-  const hash = await getVoterHash()
-  return { user_id: null, voter_ip_hash: hash }
-}
-
-/**
- * Generate or retrieve a consistent voter hash for this browser
- * Uses localStorage to persist across sessions
- * @returns {Promise<string>} - The voter hash
- */
-export async function getVoterHash() {
-  // Check if we already have a hash stored
-  let hash = localStorage.getItem(VOTER_HASH_KEY)
-
-  if (!hash) {
-    // Generate a new hash based on random data + timestamp
-    const randomData = crypto.randomUUID() + Date.now().toString()
-    const encoder = new TextEncoder()
-    const data = encoder.encode(randomData)
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-
-    // Store for future use
-    localStorage.setItem(VOTER_HASH_KEY, hash)
-  }
-
-  return hash
+  const anonId = await getAnonId()
+  return { user_id: null, voter_ip_hash: anonId }
 }
 
 /**

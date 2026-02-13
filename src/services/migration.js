@@ -1,17 +1,18 @@
 import { supabase } from './supabase'
+import { getAnonId } from './votes'
 
 /**
  * Migrate anonymous history to a newly created user account
- * This links all polls, votes, and reports created with the localStorage hash
+ * This links all polls, votes, and reports created with the anonymous ID
  * to the new user's account
  *
  * @param {string} userId - The new user's ID
  * @returns {Promise<{success: boolean, migratedPolls: number, migratedVotes: number}>}
  */
 export async function migrateAnonymousHistory(userId) {
-  const voterHash = localStorage.getItem('whichonetho_voter_hash')
+  const anonId = await getAnonId()
 
-  if (!voterHash) {
+  if (!anonId) {
     return { success: true, migratedPolls: 0, migratedVotes: 0 }
   }
 
@@ -23,7 +24,8 @@ export async function migrateAnonymousHistory(userId) {
     const { data: pollsData, error: pollsError } = await supabase
       .from('polls')
       .update({ user_id: userId })
-      .eq('creator_ip_hash', voterHash)
+      .eq('creator_ip_hash', anonId)
+      .is('user_id', null)
       .select('id')
 
     if (pollsError) {
@@ -36,7 +38,8 @@ export async function migrateAnonymousHistory(userId) {
     const { data: votesData, error: votesError } = await supabase
       .from('votes')
       .update({ user_id: userId })
-      .eq('voter_ip_hash', voterHash)
+      .eq('voter_ip_hash', anonId)
+      .is('user_id', null)
       .select('id')
 
     if (votesError) {
@@ -49,7 +52,8 @@ export async function migrateAnonymousHistory(userId) {
     const { error: reportsError } = await supabase
       .from('poll_reports')
       .update({ user_id: userId })
-      .eq('reporter_ip_hash', voterHash)
+      .eq('reporter_ip_hash', anonId)
+      .is('user_id', null)
 
     if (reportsError) {
       console.error('Failed to migrate reports:', reportsError)
@@ -59,7 +63,8 @@ export async function migrateAnonymousHistory(userId) {
     const { error: logError } = await supabase
       .from('poll_creation_log')
       .update({ user_id: userId })
-      .eq('creator_ip_hash', voterHash)
+      .eq('creator_ip_hash', anonId)
+      .is('user_id', null)
 
     if (logError) {
       console.error('Failed to migrate creation log:', logError)

@@ -42,7 +42,7 @@ export default function ShareButtons({ url, title, text }) {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 mt-4">
       <p className="font-geist font-semibold text-left rtl:text-right text-gray-500 dark:text-gray-400">
         Share:
       </p>
