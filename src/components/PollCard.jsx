@@ -1,5 +1,4 @@
 import { useState } from "react";
-import ProgressBar from "./ProgressBar";
 
 export default function PollCard({
   poll,
@@ -8,6 +7,7 @@ export default function PollCard({
   votedFor = null,
   isVoting = false,
   onReport,
+  staticTimeRemaining = null,
 }) {
   const [selectedOption, setSelectedOption] = useState(null);
   const [imageALoaded, setImageALoaded] = useState(false);
@@ -36,7 +36,9 @@ export default function PollCard({
           {/* Username */}
           <span className="font-geist text-sm text-gray-500 dark:text-gray-400">
             {poll.username ? (
-              <span className="font-medium text-gray-700 dark:text-gray-300">@{poll.username}</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                @{poll.username}
+              </span>
             ) : (
               "Anonymous"
             )}
@@ -201,23 +203,54 @@ export default function PollCard({
       {/* Results */}
       {showResults && (
         <div className="px-4 pb-4 space-y-3">
-          <ProgressBar
-            label="A"
-            percent={percentA}
-            votes={poll.votes_a || 0}
-            isWinner={winner === "A"}
-            color="primary"
-          />
-          <ProgressBar
-            label="B"
-            percent={percentB}
-            votes={poll.votes_b || 0}
-            isWinner={winner === "B"}
-            color="secondary"
-          />
-          <p className="font-geist text-center text-sm text-gray-500 dark:text-gray-400">
-            {totalVotes} {totalVotes === 1 ? "vote" : "votes"}
-          </p>
+          {/* Labels */}
+          <div className="flex justify-between text-sm">
+            <span
+              className={`font-geist font-medium ${
+                winner === "A"
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              A {percentA}% {winner === "A" && "✓"}
+            </span>
+            <span
+              className={`font-geist font-medium ${
+                winner === "B"
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              {winner === "B" && "✓ "}
+              {percentB}% B
+            </span>
+          </div>
+          {/* Combined bar */}
+          <div className="h-7 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex">
+            <div
+              className={`h-full transition-all duration-500 ease-out ${
+                winner === "A" ? "bg-green-500" : "bg-primary"
+              }`}
+              style={{ width: `${percentA}%` }}
+            />
+            <div
+              className={`h-full transition-all duration-500 ease-out ${
+                winner === "B" ? "bg-green-500" : "bg-secondary"
+              }`}
+              style={{ width: `${percentB}%` }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+            <div className="font-geist">
+              {totalVotes} {totalVotes === 1 ? "vote" : "votes"}
+            </div>
+            {staticTimeRemaining ? (
+              <div className="font-geist">Time left: {staticTimeRemaining}</div>
+            ) : (
+              <div />
+            )}
+          </div>
         </div>
       )}
     </div>

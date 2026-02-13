@@ -30,23 +30,27 @@ export default function Home() {
 
       {/* Demo poll */}
       <div className="space-y-2">
-        <PollCard poll={demoPoll} showResults={true} />
+        <PollCard
+          poll={demoPoll}
+          showResults={true}
+          staticTimeRemaining="02:45:12"
+        />
       </div>
 
       {/* CTAs */}
       <div className="space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Link
             to="/create"
             className="font-geist block w-full py-4 px-6 bg-primary hover:bg-primary-dark text-white font-semibold rounded-xl text-center transition-colors"
           >
-            Post Your Outfit Poll
+            Post
           </Link>
           <Link
             to="/vote"
             className="font-geist block w-full py-4 px-6 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold rounded-xl text-center border-2 border-gray-200 dark:border-gray-700 transition-colors"
           >
-            Help Others Choose
+            Vote
           </Link>
         </div>
       </div>
