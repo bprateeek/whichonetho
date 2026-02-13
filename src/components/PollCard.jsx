@@ -8,6 +8,7 @@ export default function PollCard({
   isVoting = false,
   onReport,
   staticTimeRemaining = null,
+  creatorPick = null,
 }) {
   const [selectedOption, setSelectedOption] = useState(null);
   const [imageALoaded, setImageALoaded] = useState(false);
@@ -16,10 +17,15 @@ export default function PollCard({
   const [imageBError, setImageBError] = useState(false);
 
   const handleVote = (option) => {
-    if (showResults || isVoting || votedFor) return;
+    // Allow voting if: not currently voting, hasn't voted yet, and either not showing results or onVote is provided (creator voting)
+    if (isVoting || votedFor) return;
+    if (showResults && !onVote) return;
     setSelectedOption(option);
     onVote?.(option);
   };
+
+  // Check if voting is enabled (for button disabled state)
+  const canVote = onVote && !isVoting && !votedFor;
 
   const totalVotes = (poll.votes_a || 0) + (poll.votes_b || 0);
   const percentA =
@@ -78,9 +84,9 @@ export default function PollCard({
         {/* Option A */}
         <button
           onClick={() => handleVote("A")}
-          disabled={showResults || isVoting || votedFor}
+          disabled={!canVote}
           className={`relative aspect-[3/4] rounded-xl overflow-hidden transition-all select-none ${
-            !showResults && !votedFor ? "active:scale-[0.98]" : ""
+            canVote ? "active:scale-[0.98] cursor-pointer" : ""
           } ${
             selectedOption === "A" || votedFor === "A"
               ? "ring-4 ring-primary"
@@ -135,14 +141,24 @@ export default function PollCard({
               </span>
             </div>
           )}
+          {creatorPick === "A" && (
+            <div className="absolute bottom-2 left-2 right-2 md:bottom-3 md:left-3 md:right-3">
+              <span className="font-geist inline-flex items-center gap-1 bg-amber-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow-lg">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                Creator picks
+              </span>
+            </div>
+          )}
         </button>
 
         {/* Option B */}
         <button
           onClick={() => handleVote("B")}
-          disabled={showResults || isVoting || votedFor}
+          disabled={!canVote}
           className={`relative aspect-[3/4] rounded-xl overflow-hidden transition-all select-none ${
-            !showResults && !votedFor ? "active:scale-[0.98]" : ""
+            canVote ? "active:scale-[0.98] cursor-pointer" : ""
           } ${
             selectedOption === "B" || votedFor === "B"
               ? "ring-4 ring-secondary"
@@ -194,6 +210,16 @@ export default function PollCard({
             <div className="absolute inset-0 bg-secondary/20 flex items-center justify-center">
               <span className="font-geist bg-secondary text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
                 Your vote
+              </span>
+            </div>
+          )}
+          {creatorPick === "B" && (
+            <div className="absolute bottom-2 left-2 right-2 md:bottom-3 md:left-3 md:right-3">
+              <span className="font-geist inline-flex items-center gap-1 bg-amber-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow-lg">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                Creator picks
               </span>
             </div>
           )}

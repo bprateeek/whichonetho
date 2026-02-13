@@ -27,7 +27,7 @@ export default function Layout({ children }) {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-sm">
+      <header className="bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-sm relative z-50">
         <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link
             to="/"
@@ -119,14 +119,14 @@ export default function Layout({ children }) {
                 </Link>
               )}
               <Link
-                to="/analytics"
+                to="/stats"
                 className={`font-geist text-sm ${
-                  location.pathname === "/analytics"
+                  location.pathname === "/stats"
                     ? "text-primary font-medium"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 }`}
               >
-                Analytics
+                Stats
               </Link>
               <Link
                 to="/history"
@@ -190,26 +190,26 @@ export default function Layout({ children }) {
                     <Link
                       to="/"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      className="block px-4 py-3 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                     >
                       Home
                     </Link>
                   )}
                   <Link
-                    to="/analytics"
+                    to="/stats"
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`block px-4 py-2 text-sm ${
-                      location.pathname === "/analytics"
+                    className={`block px-4 py-3 text-base ${
+                      location.pathname === "/stats"
                         ? "text-primary font-medium bg-primary/5"
                         : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                     }`}
                   >
-                    Analytics
+                    Stats
                   </Link>
                   <Link
                     to="/history"
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`block px-4 py-2 text-sm ${
+                    className={`block px-4 py-3 text-base ${
                       location.pathname === "/history"
                         ? "text-primary font-medium bg-primary/5"
                         : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -223,13 +223,13 @@ export default function Layout({ children }) {
                       <Link
                         to="/profile"
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm ${
+                        className={`flex items-center gap-2 px-4 py-3 text-base ${
                           location.pathname === "/profile"
                             ? "text-primary font-medium bg-primary/5"
                             : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                         }`}
                       >
-                        <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
+                        <span className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold text-primary">
                           {profile?.username?.[0]?.toUpperCase() || "U"}
                         </span>
                         @{profile?.username || "user"}
@@ -238,7 +238,7 @@ export default function Layout({ children }) {
                       <Link
                         to="/login"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="block px-4 py-2 text-sm text-primary font-medium hover:bg-gray-100 dark:hover:bg-gray-800"
+                        className="block px-4 py-3 text-base text-primary font-medium hover:bg-gray-100 dark:hover:bg-gray-800"
                       >
                         Sign In
                       </Link>

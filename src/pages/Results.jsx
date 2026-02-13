@@ -4,14 +4,17 @@ import PollCard from "../components/PollCard";
 import CountdownTimer from "../components/CountdownTimer";
 import Spinner from "../components/Spinner";
 import ShareButtons from "../components/ShareButtons";
-import { getPollById } from "../services/polls";
-import { subscribeToVoteCounts, hasVoted } from "../services/votes";
+import { getPollById, isCurrentUserPollCreator } from "../services/polls";
+import { subscribeToVoteCounts, hasVoted, castVote } from "../services/votes";
 import { useMetaTags } from "../hooks/useMetaTags";
 
 export default function Results() {
   const { pollId } = useParams();
   const [poll, setPoll] = useState(null);
   const [userVote, setUserVote] = useState(null);
+  const [isCreator, setIsCreator] = useState(false);
+  const [creatorPick, setCreatorPick] = useState(null);
+  const [isVoting, setIsVoting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -43,10 +46,18 @@ export default function Results() {
         const pollData = await getPollById(pollId);
         setPoll(pollData);
 
+        // Check if current user is the creator
+        const creator = await isCurrentUserPollCreator(pollData);
+        setIsCreator(creator);
+
         // Check if user has voted on this poll
         const voteStatus = await hasVoted(pollId);
         if (voteStatus.hasVoted) {
           setUserVote(voteStatus.votedFor);
+          // If creator voted, that's their "pick"
+          if (creator) {
+            setCreatorPick(voteStatus.votedFor);
+          }
         }
 
         // Subscribe to real-time vote updates
@@ -124,6 +135,27 @@ export default function Results() {
   const now = new Date();
   const isExpired = expiresAt < now || poll.status === "closed";
 
+  // Handle creator voting on their own poll
+  const handleCreatorVote = async (choice) => {
+    if (isVoting || userVote || isExpired) return;
+
+    setIsVoting(true);
+    try {
+      const result = await castVote(pollId, choice, poll.poster_gender);
+      if (result.success) {
+        setUserVote(choice);
+        setCreatorPick(choice);
+      }
+    } catch (err) {
+      console.error("Failed to cast vote:", err);
+    } finally {
+      setIsVoting(false);
+    }
+  };
+
+  // Creator can vote if they haven't voted yet and poll is not expired
+  const canCreatorVote = isCreator && !userVote && !isExpired;
+
   return (
     <div className="space-y-6 md:space-y-8">
       {/* Final Results Badge (when expired) */}
@@ -180,18 +212,31 @@ export default function Results() {
       </div>
 
       {/* Poll with results */}
-      <PollCard poll={poll} showResults={true} votedFor={userVote} />
+      <PollCard
+        poll={poll}
+        showResults={true}
+        votedFor={userVote}
+        onVote={canCreatorVote ? handleCreatorVote : undefined}
+        isVoting={isVoting}
+        creatorPick={creatorPick}
+      />
 
       {/* Share Options */}
       <ShareButtons url={shareUrl} title={shareTitle} text={shareDescription} />
 
       {/* Actions */}
-      <div>
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          to="/vote"
+          className="font-geist py-3 px-6 bg-primary hover:bg-primary-dark text-white font-medium rounded-xl text-center transition-colors"
+        >
+          Vote on Polls
+        </Link>
         <Link
           to="/create"
-          className="font-geist block w-full py-3 px-6 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 font-medium rounded-xl text-center transition-colors"
+          className="font-geist py-3 px-6 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 font-medium rounded-xl text-center transition-colors"
         >
-          Post Another Poll
+          Post Another
         </Link>
       </div>
     </div>

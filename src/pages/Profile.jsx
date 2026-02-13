@@ -106,13 +106,13 @@ export default function Profile() {
       {/* Quick Links */}
       <div className="space-y-3">
         <Link
-          to="/analytics"
+          to="/stats"
           className="font-geist flex items-center justify-between w-full py-4 px-5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
         >
           <span className="flex items-center gap-3">
             <span className="text-xl">📊</span>
             <span className="text-gray-900 dark:text-gray-100">
-              View Analytics
+              View Stats
             </span>
           </span>
           <svg

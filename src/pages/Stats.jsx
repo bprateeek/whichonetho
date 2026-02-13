@@ -34,16 +34,19 @@ const previewContextData = [
 ];
 
 // Blurred preview component for unauthenticated users
-function AnalyticsPreview() {
+function StatsPreview() {
   return (
     <div className="relative">
       {/* Blurred preview */}
-      <div className="blur-sm pointer-events-none select-none" aria-hidden="true">
+      <div
+        className="blur-sm pointer-events-none select-none"
+        aria-hidden="true"
+      >
         <div className="space-y-8">
           {/* Header */}
           <div>
             <h1 className="font-geist text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Your Analytics
+              Your Stats
             </h1>
             <p className="font-geist text-gray-500 dark:text-gray-400 mt-1">
               Track your poll performance and voting activity
@@ -52,10 +55,26 @@ function AnalyticsPreview() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            <StatsCard label="Polls Created" value={previewStats.totalPolls} icon="📋" />
-            <StatsCard label="Votes Received" value={previewStats.totalVotesReceived} icon="📥" />
-            <StatsCard label="Votes Cast" value={previewStats.totalVotesCast} icon="🗳️" />
-            <StatsCard label="Avg Votes/Poll" value={previewStats.avgVotesPerPoll} icon="📈" />
+            <StatsCard
+              label="Polls Created"
+              value={previewStats.totalPolls}
+              icon="📋"
+            />
+            <StatsCard
+              label="Votes Received"
+              value={previewStats.totalVotesReceived}
+              icon="📥"
+            />
+            <StatsCard
+              label="Votes Cast"
+              value={previewStats.totalVotesCast}
+              icon="🗳️"
+            />
+            <StatsCard
+              label="Avg Votes/Poll"
+              value={previewStats.avgVotesPerPoll}
+              icon="📈"
+            />
           </div>
 
           {/* A vs B Results */}
@@ -103,15 +122,16 @@ function AnalyticsPreview() {
         <div className="text-center bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 max-w-sm mx-4">
           <div className="text-4xl mb-4">📊</div>
           <h2 className="font-geist text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            Sign in to view analytics
+            Sign in to view stats
           </h2>
           <p className="font-geist text-gray-500 dark:text-gray-400 mb-6">
-            Track your poll performance and voting activity across all your devices
+            Track your poll performance and voting activity across all your
+            devices
           </p>
           <div className="flex flex-col gap-3">
             <Link
               to="/login"
-              state={{ from: { pathname: "/analytics" } }}
+              state={{ from: { pathname: "/stats" } }}
               className="font-geist w-full py-3 px-6 bg-primary hover:bg-primary-dark text-white font-semibold rounded-xl transition-colors"
             >
               Sign In
@@ -129,7 +149,7 @@ function AnalyticsPreview() {
   );
 }
 
-export default function Analytics() {
+export default function Stats() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [stats, setStats] = useState(null);
   const [timeline, setTimeline] = useState([]);
@@ -137,13 +157,13 @@ export default function Analytics() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Only fetch analytics if authenticated
+    // Only fetch stats if authenticated
     if (!isAuthenticated) {
       setIsLoading(false);
       return;
     }
 
-    const fetchAnalytics = async () => {
+    const fetchStats = async () => {
       try {
         setIsLoading(true);
         setError(null);
@@ -156,14 +176,14 @@ export default function Analytics() {
         setStats(userStats);
         setTimeline(voteTimeline);
       } catch (err) {
-        console.error("Failed to fetch analytics:", err);
-        setError("Failed to load analytics");
+        console.error("Failed to fetch stats:", err);
+        setError("Failed to load stats");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAnalytics();
+    fetchStats();
   }, [isAuthenticated]);
 
   // Show loading while checking auth
@@ -177,7 +197,7 @@ export default function Analytics() {
 
   // Show blurred preview for unauthenticated users
   if (!isAuthenticated) {
-    return <AnalyticsPreview />;
+    return <StatsPreview />;
   }
 
   if (isLoading) {
@@ -211,7 +231,7 @@ export default function Analytics() {
       <div className="text-center space-y-4 py-12">
         <div className="text-5xl">📊</div>
         <h1 className="font-geist text-2xl font-bold text-gray-900 dark:text-gray-100">
-          No Analytics Yet
+          No stats Yet
         </h1>
         <p className="font-geist text-gray-500 dark:text-gray-400">
           Create polls and vote to see your stats here.
@@ -242,7 +262,7 @@ export default function Analytics() {
           ? "General"
           : label.charAt(0).toUpperCase() + label.slice(1),
       count,
-    })
+    }),
   );
 
   return (
@@ -250,7 +270,7 @@ export default function Analytics() {
       {/* Header */}
       <div>
         <h1 className="font-geist text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Your Analytics
+          Your Stats
         </h1>
         <p className="font-geist text-gray-500 dark:text-gray-400 mt-1">
           Track your poll performance and voting activity

@@ -77,6 +77,69 @@ export async function createPoll({ posterGender, bodyType, context, duration = 6
 }
 
 /**
+ * Create a poll record in the database (used when images are already uploaded)
+ * @param {Object} params
+ * @param {string} params.posterGender - 'male' | 'female' | 'nonbinary'
+ * @param {string} [params.bodyType] - Optional body type
+ * @param {string} [params.context] - Optional context (date, work, etc.)
+ * @param {number} [params.duration=60] - Poll duration in minutes
+ * @param {string} params.imageAUrl - URL of first uploaded image
+ * @param {string} params.imageBUrl - URL of second uploaded image
+ * @param {string} params.tempId - Temp ID used for image folder (for cleanup on failure)
+ * @returns {Promise<{id: string}>} - Created poll
+ */
+export async function createPollRecord({ posterGender, bodyType, context, duration = 60, imageAUrl, imageBUrl, tempId }) {
+  const { user_id, voter_ip_hash: creatorHash } = await getUserIdentifier()
+
+  // Calculate expires_at based on duration (in minutes)
+  const expiresAt = new Date(Date.now() + duration * 60 * 1000).toISOString()
+
+  const { data, error } = await supabase
+    .from('polls')
+    .insert({
+      poster_gender: posterGender,
+      body_type: bodyType || null,
+      context: context || null,
+      image_a_url: imageAUrl,
+      image_b_url: imageBUrl,
+      user_id,
+      creator_ip_hash: creatorHash,
+      expires_at: expiresAt,
+    })
+    .select('id')
+    .single()
+
+  if (error) {
+    // Cleanup uploaded images on failure
+    await deleteImages(tempId)
+    throw new Error(`Failed to create poll: ${error.message}`)
+  }
+
+  return data
+}
+
+/**
+ * Check if the current user is the creator of a poll
+ * @param {Object} poll - The poll object with user_id and creator_ip_hash
+ * @returns {Promise<boolean>} - True if current user created this poll
+ */
+export async function isCurrentUserPollCreator(poll) {
+  const { user_id, voter_ip_hash } = await getUserIdentifier()
+
+  // Check by user_id if authenticated
+  if (user_id && poll.user_id) {
+    return user_id === poll.user_id
+  }
+
+  // Check by hash if anonymous
+  if (voter_ip_hash && poll.creator_ip_hash) {
+    return voter_ip_hash === poll.creator_ip_hash
+  }
+
+  return false
+}
+
+/**
  * Get a poll by ID with its vote counts
  * @param {string} pollId
  * @returns {Promise<Object>} - Poll with vote counts
