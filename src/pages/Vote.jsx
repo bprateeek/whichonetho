@@ -77,8 +77,6 @@ export default function Vote() {
 
       if (result.alreadyVoted) {
         toast.info("You've already voted on this poll");
-      } else {
-        toast.success(`Voted for Outfit ${votedOption}!`);
       }
 
       setVotedPolls((prev) => new Map(prev).set(pollId, votedOption));

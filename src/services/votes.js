@@ -37,18 +37,18 @@ export async function getAnonId() {
 
 /**
  * Get user identifier for database operations
- * Returns user_id if authenticated, or voter_ip_hash (anon_id) if anonymous
- * @returns {Promise<{user_id: string|null, voter_ip_hash: string|null}>}
+ * Returns user_id if authenticated, or anon_id if anonymous
+ * @returns {Promise<{user_id: string|null, anon_id: string|null}>}
  */
 export async function getUserIdentifier() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user?.id) {
-    return { user_id: user.id, voter_ip_hash: null }
+    return { user_id: user.id, anon_id: null }
   }
 
   const anonId = await getAnonId()
-  return { user_id: null, voter_ip_hash: anonId }
+  return { user_id: null, anon_id: anonId }
 }
 
 /**
@@ -59,7 +59,7 @@ export async function getUserIdentifier() {
  * @returns {Promise<{success: boolean, alreadyVoted?: boolean}>}
  */
 export async function castVote(pollId, choice, voterGender) {
-  const { user_id, voter_ip_hash } = await getUserIdentifier()
+  const { user_id, anon_id } = await getUserIdentifier()
 
   const { error } = await supabase
     .from('votes')
@@ -68,7 +68,7 @@ export async function castVote(pollId, choice, voterGender) {
       voted_for: choice,
       voter_gender: voterGender,
       user_id,
-      voter_ip_hash,
+      anon_id,
     })
 
   if (error) {
@@ -88,18 +88,18 @@ export async function castVote(pollId, choice, voterGender) {
  * @returns {Promise<{hasVoted: boolean, votedFor?: 'A' | 'B'}>}
  */
 export async function hasVoted(pollId) {
-  const { user_id, voter_ip_hash } = await getUserIdentifier()
+  const { user_id, anon_id } = await getUserIdentifier()
 
   let query = supabase
     .from('votes')
     .select('voted_for')
     .eq('poll_id', pollId)
 
-  // Check by user_id if authenticated, otherwise by voter_ip_hash
+  // Check by user_id if authenticated, otherwise by anon_id
   if (user_id) {
     query = query.eq('user_id', user_id)
   } else {
-    query = query.eq('voter_ip_hash', voter_ip_hash)
+    query = query.eq('anon_id', anon_id)
   }
 
   const { data, error } = await query.maybeSingle()

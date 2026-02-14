@@ -7,6 +7,7 @@ import {
   onAuthStateChange,
   getProfile,
 } from '../services/auth'
+import { migrateAnonymousHistory } from '../services/migration'
 
 const AuthContext = createContext()
 
@@ -52,6 +53,14 @@ export function AuthProvider({ children }) {
       setUser(result.user)
       const userProfile = await getProfile(result.user.id)
       setProfile(userProfile)
+
+      // Migrate anonymous history to the new user account
+      try {
+        await migrateAnonymousHistory(result.user.id)
+      } catch (migrationError) {
+        console.error('Failed to migrate history on signup:', migrationError)
+        // Don't block signup on migration failure
+      }
     }
     return result
   }, [])
@@ -62,6 +71,14 @@ export function AuthProvider({ children }) {
       setUser(result.user)
       const userProfile = await getProfile(result.user.id)
       setProfile(userProfile)
+
+      // Migrate anonymous history to the user account
+      try {
+        await migrateAnonymousHistory(result.user.id)
+      } catch (migrationError) {
+        console.error('Failed to migrate history on login:', migrationError)
+        // Don't block login on migration failure
+      }
     }
     return result
   }, [])

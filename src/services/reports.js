@@ -42,14 +42,14 @@ function addToLocalReportedList(pollId) {
  * @returns {Promise<{success: boolean, alreadyReported?: boolean}>}
  */
 export async function reportPoll(pollId, reason) {
-  const { user_id, voter_ip_hash: reporterHash } = await getUserIdentifier()
+  const { user_id, anon_id: reporterAnonId } = await getUserIdentifier()
 
   const { error } = await supabase
     .from('poll_reports')
     .insert({
       poll_id: pollId,
       user_id,
-      reporter_ip_hash: reporterHash,
+      reporter_anon_id: reporterAnonId,
       reason,
     })
 

@@ -257,7 +257,7 @@ export default function Layout({ children }) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-sm py-4 mt-auto">
+      <footer className="bg-gray-50 dark:bg-gray-950 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] mt-auto">
         <div className="font-geist max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-4">
           {/* Links and Social row */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 mb-2">
