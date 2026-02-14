@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "../lib/toast";
 import { validateUsername, checkUsernameAvailable } from "../services/auth";
-import { migrateAnonymousHistory } from "../services/migration";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -93,14 +92,7 @@ export default function Signup() {
         setError(signUpError.message || "Failed to create account");
         toast.error("Failed to create account");
       } else if (user) {
-        // Migrate anonymous history to the new user
-        try {
-          await migrateAnonymousHistory(user.id);
-        } catch (migrationError) {
-          console.error("Failed to migrate history:", migrationError);
-          // Don't block signup on migration failure
-        }
-
+        // Migration of anonymous history is handled by AuthContext
         toast.success("Account created successfully!");
         navigate("/", { replace: true });
       }

@@ -24,7 +24,7 @@ export async function migrateAnonymousHistory(userId) {
     const { data: pollsData, error: pollsError } = await supabase
       .from('polls')
       .update({ user_id: userId })
-      .eq('creator_ip_hash', anonId)
+      .eq('creator_anon_id', anonId)
       .is('user_id', null)
       .select('id')
 
@@ -38,7 +38,7 @@ export async function migrateAnonymousHistory(userId) {
     const { data: votesData, error: votesError } = await supabase
       .from('votes')
       .update({ user_id: userId })
-      .eq('voter_ip_hash', anonId)
+      .eq('anon_id', anonId)
       .is('user_id', null)
       .select('id')
 
@@ -52,7 +52,7 @@ export async function migrateAnonymousHistory(userId) {
     const { error: reportsError } = await supabase
       .from('poll_reports')
       .update({ user_id: userId })
-      .eq('reporter_ip_hash', anonId)
+      .eq('reporter_anon_id', anonId)
       .is('user_id', null)
 
     if (reportsError) {
@@ -63,7 +63,7 @@ export async function migrateAnonymousHistory(userId) {
     const { error: logError } = await supabase
       .from('poll_creation_log')
       .update({ user_id: userId })
-      .eq('creator_ip_hash', anonId)
+      .eq('creator_anon_id', anonId)
       .is('user_id', null)
 
     if (logError) {

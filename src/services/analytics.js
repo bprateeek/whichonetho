@@ -6,7 +6,7 @@ import { getUserIdentifier } from './votes'
  * @returns {Promise<Object>} User stats
  */
 export async function getUserStats() {
-  const { user_id, voter_ip_hash } = await getUserIdentifier()
+  const { user_id, anon_id } = await getUserIdentifier()
 
   // Get user's created polls with vote counts
   let pollsQuery = supabase
@@ -24,11 +24,11 @@ export async function getUserStats() {
     `)
     .order('created_at', { ascending: false })
 
-  // Query by user_id if authenticated, otherwise by creator_ip_hash
+  // Query by user_id if authenticated, otherwise by creator_anon_id
   if (user_id) {
     pollsQuery = pollsQuery.eq('user_id', user_id)
   } else {
-    pollsQuery = pollsQuery.eq('creator_ip_hash', voter_ip_hash)
+    pollsQuery = pollsQuery.eq('creator_anon_id', anon_id)
   }
 
   const { data: polls, error: pollsError } = await pollsQuery
@@ -47,7 +47,7 @@ export async function getUserStats() {
   if (user_id) {
     votesQuery = votesQuery.eq('user_id', user_id)
   } else {
-    votesQuery = votesQuery.eq('voter_ip_hash', voter_ip_hash)
+    votesQuery = votesQuery.eq('anon_id', anon_id)
   }
 
   const { data: votes, error: votesError } = await votesQuery
@@ -115,7 +115,7 @@ export async function getUserStats() {
  * @returns {Promise<Array>} Vote counts by day
  */
 export async function getVoteTimeline(days = 7) {
-  const { user_id, voter_ip_hash } = await getUserIdentifier()
+  const { user_id, anon_id } = await getUserIdentifier()
 
   // Get user's poll IDs
   let pollsQuery = supabase
@@ -125,7 +125,7 @@ export async function getVoteTimeline(days = 7) {
   if (user_id) {
     pollsQuery = pollsQuery.eq('user_id', user_id)
   } else {
-    pollsQuery = pollsQuery.eq('creator_ip_hash', voter_ip_hash)
+    pollsQuery = pollsQuery.eq('creator_anon_id', anon_id)
   }
 
   const { data: userPolls } = await pollsQuery
