@@ -287,6 +287,89 @@ export async function getPollsByGender(posterGender, limit = 20, reportedPollIds
     }))
 }
 
+/**
+ * Get polls with flexible filters (for the main vote feed)
+ * @param {Object} options
+ * @param {string[]} [options.genders] - Array of genders to include ('female', 'male', 'nonbinary')
+ * @param {'soon'|'hour'|'4hours'|'all'} [options.timeFilter='all'] - Time remaining filter
+ * @param {number} [options.limit=20] - Max number of polls to fetch
+ * @param {string[]} [options.excludeIds=[]] - Poll IDs to exclude (locally reported)
+ * @returns {Promise<Array>} - List of polls
+ */
+export async function getFilteredPolls({ genders = [], timeFilter = 'all', limit = 20, excludeIds = [] } = {}) {
+  const { user_id, voter_ip_hash: voterHash } = await getUserIdentifier()
+
+  const now = new Date()
+
+  // Calculate time bounds based on filter
+  let maxExpiresAt = null
+  if (timeFilter === 'soon') {
+    // Expiring within 15 minutes
+    maxExpiresAt = new Date(now.getTime() + 15 * 60 * 1000)
+  } else if (timeFilter === 'hour') {
+    // Expiring within 1 hour
+    maxExpiresAt = new Date(now.getTime() + 60 * 60 * 1000)
+  } else if (timeFilter === '4hours') {
+    // Expiring within 4 hours
+    maxExpiresAt = new Date(now.getTime() + 4 * 60 * 60 * 1000)
+  }
+
+  // Build the query
+  let query = supabase
+    .from('polls')
+    .select(`
+      *,
+      vote_counts (
+        total_votes,
+        votes_a,
+        votes_b
+      )
+    `)
+    .eq('status', 'active')
+    .gt('expires_at', now.toISOString())
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  // Filter by genders if specified
+  if (genders.length > 0 && genders.length < 3) {
+    query = query.in('poster_gender', genders)
+  }
+
+  // Filter by time remaining
+  if (maxExpiresAt) {
+    query = query.lt('expires_at', maxExpiresAt.toISOString())
+  }
+
+  const { data: polls, error } = await query
+
+  if (error) {
+    throw new Error(`Failed to fetch polls: ${error.message}`)
+  }
+
+  // Get polls the user has already voted on
+  let votedQuery = supabase.from('votes').select('poll_id')
+  if (user_id) {
+    votedQuery = votedQuery.eq('user_id', user_id)
+  } else {
+    votedQuery = votedQuery.eq('voter_ip_hash', voterHash)
+  }
+  const { data: votedPolls } = await votedQuery
+
+  const votedPollIds = new Set(votedPolls?.map(v => v.poll_id) || [])
+  const excludeSet = new Set(excludeIds)
+
+  // Filter out already-voted polls, excluded polls, and flatten vote counts
+  return polls
+    .filter(poll => !votedPollIds.has(poll.id) && !excludeSet.has(poll.id))
+    .map(poll => ({
+      ...poll,
+      votes_a: poll.vote_counts?.votes_a || 0,
+      votes_b: poll.vote_counts?.votes_b || 0,
+      total_votes: poll.vote_counts?.total_votes || 0,
+      username: null,
+    }))
+}
+
 // Rate limit: 5 polls per day per user
 const POLLS_PER_DAY_LIMIT = 5
 
