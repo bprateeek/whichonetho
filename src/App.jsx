@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
@@ -19,13 +18,9 @@ import Terms from './pages/Terms'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
 import RedirectIfAuthenticated from './components/RedirectIfAuthenticated'
-import { getAnonId } from './services/votes'
 
 function App() {
-  // Initialize anonymous ID on app load (sets cookie via edge function)
-  useEffect(() => {
-    getAnonId()
-  }, [])
+  // Anonymous auth is handled by AuthContext on mount
 
   return (
     <ErrorBoundary>

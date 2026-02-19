@@ -1,54 +1,13 @@
 import { supabase } from './supabase'
 
-// In-memory cache for anonymous ID (fetched from cookie via edge function)
-let cachedAnonId = null
-
-/**
- * Get anonymous ID from server-set cookie (via edge function)
- * The edge function manages the HttpOnly cookie and returns the ID
- * @returns {Promise<string>} - The anonymous user ID
- */
-export async function getAnonId() {
-  // Return cached value if available
-  if (cachedAnonId) return cachedAnonId
-
-  try {
-    const { data, error } = await supabase.functions.invoke('get-anon-id', {
-      method: 'GET',
-    })
-
-    if (error) {
-      console.error('Failed to get anon_id from edge function:', error)
-    }
-
-    if (data?.anon_id) {
-      cachedAnonId = data.anon_id
-      return cachedAnonId
-    }
-  } catch (error) {
-    console.error('Failed to invoke get-anon-id function:', error)
-  }
-
-  // Fallback: generate client-side UUID (shouldn't happen normally)
-  console.warn('Using fallback client-side UUID generation')
-  cachedAnonId = crypto.randomUUID()
-  return cachedAnonId
-}
-
 /**
  * Get user identifier for database operations
- * Returns user_id if authenticated, or anon_id if anonymous
- * @returns {Promise<{user_id: string|null, anon_id: string|null}>}
+ * With anonymous auth, all users (including anonymous) have a user_id
+ * @returns {Promise<string|null>}
  */
-export async function getUserIdentifier() {
+export async function getUserId() {
   const { data: { user } } = await supabase.auth.getUser()
-
-  if (user?.id) {
-    return { user_id: user.id, anon_id: null }
-  }
-
-  const anonId = await getAnonId()
-  return { user_id: null, anon_id: anonId }
+  return user?.id || null
 }
 
 /**
@@ -59,7 +18,7 @@ export async function getUserIdentifier() {
  * @returns {Promise<{success: boolean, alreadyVoted?: boolean}>}
  */
 export async function castVote(pollId, choice, voterGender) {
-  const { user_id, anon_id } = await getUserIdentifier()
+  const userId = await getUserId()
 
   const { error } = await supabase
     .from('votes')
@@ -67,8 +26,7 @@ export async function castVote(pollId, choice, voterGender) {
       poll_id: pollId,
       voted_for: choice,
       voter_gender: voterGender,
-      user_id,
-      anon_id,
+      user_id: userId,
     })
 
   if (error) {
@@ -88,21 +46,14 @@ export async function castVote(pollId, choice, voterGender) {
  * @returns {Promise<{hasVoted: boolean, votedFor?: 'A' | 'B'}>}
  */
 export async function hasVoted(pollId) {
-  const { user_id, anon_id } = await getUserIdentifier()
+  const userId = await getUserId()
 
-  let query = supabase
+  const { data, error } = await supabase
     .from('votes')
     .select('voted_for')
     .eq('poll_id', pollId)
-
-  // Check by user_id if authenticated, otherwise by anon_id
-  if (user_id) {
-    query = query.eq('user_id', user_id)
-  } else {
-    query = query.eq('anon_id', anon_id)
-  }
-
-  const { data, error } = await query.maybeSingle()
+    .eq('user_id', userId)
+    .maybeSingle()
 
   if (error) {
     throw new Error(`Failed to check vote status: ${error.message}`)

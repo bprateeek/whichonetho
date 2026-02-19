@@ -2,6 +2,27 @@ import imageCompression from 'browser-image-compression'
 import { supabase } from './supabase'
 
 const BUCKET_NAME = 'outfit-images'
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB pre-compression limit
+
+/**
+ * Validate image file type and size
+ * @param {File} file - The file to validate
+ * @throws {Error} If validation fails
+ */
+export function validateImageFile(file) {
+  if (!file) {
+    throw new Error('No file provided')
+  }
+
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    throw new Error('Only image files are allowed (JPEG, PNG, WebP, HEIC)')
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error('Image too large. Maximum size is 10MB.')
+  }
+}
 
 /**
  * Compress an image file to reduce size before upload
@@ -9,6 +30,9 @@ const BUCKET_NAME = 'outfit-images'
  * @returns {Promise<File>} - Compressed image file
  */
 export async function compressImage(file) {
+  // Validate file before processing
+  validateImageFile(file)
+
   const options = {
     maxSizeMB: 1,
     maxWidthOrHeight: 1200,
@@ -21,8 +45,7 @@ export async function compressImage(file) {
     return compressedFile
   } catch (error) {
     console.error('Image compression failed:', error)
-    // Return original file if compression fails
-    return file
+    throw new Error('Failed to process image. Please try a different file.')
   }
 }
 

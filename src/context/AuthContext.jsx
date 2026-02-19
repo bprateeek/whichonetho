@@ -8,6 +8,7 @@ import {
   getProfile,
 } from '../services/auth'
 import { migrateAnonymousHistory } from '../services/migration'
+import { supabase } from '../services/supabase'
 
 const AuthContext = createContext()
 
@@ -18,15 +19,40 @@ export function AuthProvider({ children }) {
 
   // Initialize auth state on mount
   useEffect(() => {
+    let isMounted = true
+
     const initAuth = async () => {
       try {
         const { user, profile } = await getCurrentUser()
-        setUser(user)
-        setProfile(profile)
+        if (!isMounted) return  // Ignore if unmounted
+
+        if (user) {
+          setUser(user)
+          setProfile(profile)
+        } else {
+          // No user exists - sign in anonymously
+          const { data, error } = await supabase.auth.signInAnonymously()
+          if (!isMounted) return  // Ignore if unmounted
+
+          if (error) {
+            // Ignore abort errors (caused by StrictMode remount)
+            if (error.name !== 'AbortError' && !error.message?.includes('aborted')) {
+              console.error('Failed to sign in anonymously:', error)
+            }
+          } else if (data.user) {
+            setUser(data.user)
+            // Anonymous users don't have profiles
+          }
+        }
       } catch (error) {
-        console.error('Failed to initialize auth:', error)
+        // Ignore abort errors (caused by StrictMode remount)
+        if (error.name !== 'AbortError' && !error.message?.includes('aborted')) {
+          console.error('Failed to initialize auth:', error)
+        }
       } finally {
-        setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
     }
 
@@ -34,17 +60,24 @@ export function AuthProvider({ children }) {
 
     // Subscribe to auth state changes
     const unsubscribe = onAuthStateChange(async (event, session) => {
+      if (!isMounted) return
+
       if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user)
         const userProfile = await getProfile(session.user.id)
-        setProfile(userProfile)
+        if (isMounted) {
+          setProfile(userProfile)
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
         setProfile(null)
       }
     })
 
-    return () => unsubscribe()
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
   }, [])
 
   const signUp = useCallback(async (email, password, username) => {
@@ -96,7 +129,8 @@ export function AuthProvider({ children }) {
     user,
     profile,
     isLoading,
-    isAuthenticated: !!user,
+    isAnonymous: user?.is_anonymous ?? false,
+    isAuthenticated: !!user && !user.is_anonymous,  // Only true for permanent users
     signUp,
     signIn,
     signOut,

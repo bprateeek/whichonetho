@@ -139,29 +139,29 @@ export default function Layout({ children }) {
                 History
               </Link>
               {/* Auth UI - Desktop */}
-              {!isLoading && (
-                isAuthenticated ? (
-                  <Link
-                    to="/profile"
-                    className={`font-geist text-sm flex items-center gap-1.5 ${
-                      location.pathname === "/profile"
-                        ? "text-primary font-medium"
-                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    }`}
-                  >
-                    <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
-                      {profile?.username?.[0]?.toUpperCase() || "U"}
-                    </span>
-                    <span>@{profile?.username || "user"}</span>
-                  </Link>
-                ) : (
-                  <Link
-                    to="/login"
-                    className="font-geist text-sm py-1.5 px-3 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                )
+              {isLoading ? (
+                <div className="w-20 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+              ) : isAuthenticated ? (
+                <Link
+                  to="/profile"
+                  className={`font-geist text-sm flex items-center gap-1.5 ${
+                    location.pathname === "/profile"
+                      ? "text-primary font-medium"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  }`}
+                >
+                  <span className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
+                    {profile?.username?.[0]?.toUpperCase() || "U"}
+                  </span>
+                  <span>@{profile?.username || "user"}</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  className="font-geist text-sm py-1.5 px-3 bg-primary hover:bg-primary-dark text-white font-medium rounded-lg transition-colors"
+                >
+                  Sign In
+                </Link>
               )}
             </div>
 
@@ -218,31 +218,33 @@ export default function Layout({ children }) {
                     History
                   </Link>
                   <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-                  {!isLoading && (
-                    isAuthenticated ? (
-                      <Link
-                        to="/profile"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-2 px-4 py-3 text-base ${
-                          location.pathname === "/profile"
-                            ? "text-primary font-medium bg-primary/5"
-                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                        }`}
-                      >
-                        <span className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold text-primary">
-                          {profile?.username?.[0]?.toUpperCase() || "U"}
-                        </span>
-                        @{profile?.username || "user"}
-                      </Link>
-                    ) : (
-                      <Link
-                        to="/login"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block px-4 py-3 text-base text-primary font-medium hover:bg-gray-100 dark:hover:bg-gray-800"
-                      >
-                        Sign In
-                      </Link>
-                    )
+                  {isLoading ? (
+                    <div className="px-4 py-3">
+                      <div className="w-24 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    </div>
+                  ) : isAuthenticated ? (
+                    <Link
+                      to="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-2 px-4 py-3 text-base ${
+                        location.pathname === "/profile"
+                          ? "text-primary font-medium bg-primary/5"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                    >
+                      <span className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold text-primary">
+                        {profile?.username?.[0]?.toUpperCase() || "U"}
+                      </span>
+                      @{profile?.username || "user"}
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-4 py-3 text-base text-primary font-medium hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      Sign In
+                    </Link>
                   )}
                 </div>
               )}

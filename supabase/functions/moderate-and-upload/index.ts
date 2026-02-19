@@ -1,9 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Allowed origins for CORS
+const ALLOWED_ORIGINS = [
+  'https://whichonetho.com',
+  'http://localhost:5173',
+  'http://localhost:4173',  // Vite preview
+]
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin') || ''
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
 const BUCKET_NAME = 'outfit-images'
@@ -61,8 +73,8 @@ async function checkModeration(imageBase64: string): Promise<ModerationResult> {
   const AWS_REGION = Deno.env.get('AWS_REGION') || 'us-east-1'
 
   if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
-    console.warn('AWS credentials not configured, skipping moderation')
-    return { approved: true }
+    console.error('AWS credentials not configured - rejecting upload')
+    throw new Error('Moderation service unavailable')
   }
 
   const service = 'rekognition'
@@ -114,8 +126,7 @@ async function checkModeration(imageBase64: string): Promise<ModerationResult> {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Rekognition API error:', response.status, errorText)
-      // On API error, allow the image (fail open)
-      return { approved: true }
+      throw new Error('Moderation service error')
     }
 
     const result = await response.json()
@@ -137,13 +148,13 @@ async function checkModeration(imageBase64: string): Promise<ModerationResult> {
     return { approved: true }
   } catch (error) {
     console.error('Moderation check failed:', error)
-    return { approved: true }
+    throw error
   }
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: getCorsHeaders(req) })
   }
 
   try {
@@ -155,7 +166,7 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
         JSON.stringify({ success: false, error: 'CONFIG_ERROR', message: 'Missing Supabase configuration' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       )
     }
 
@@ -165,7 +176,7 @@ serve(async (req) => {
     } catch {
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid JSON body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       )
     }
 
@@ -174,7 +185,16 @@ serve(async (req) => {
     if (!imageA || !imageB || !pollId) {
       return new Response(
         JSON.stringify({ success: false, error: 'Missing required fields' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Validate pollId is a valid UUID
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!UUID_REGEX.test(pollId)) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid poll ID format' }),
+        { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       )
     }
 
@@ -203,7 +223,7 @@ serve(async (req) => {
           rejectedImage,
           message: 'Image contains content that violates our community guidelines',
         }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       )
     }
 
@@ -222,14 +242,14 @@ serve(async (req) => {
     if (resultA.error) {
       return new Response(
         JSON.stringify({ success: false, error: 'UPLOAD_ERROR', message: `Image A: ${resultA.error.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       )
     }
 
     if (resultB.error) {
       return new Response(
         JSON.stringify({ success: false, error: 'UPLOAD_ERROR', message: `Image B: ${resultB.error.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       )
     }
 
@@ -244,14 +264,14 @@ serve(async (req) => {
         imageAUrl: urlDataA.publicUrl,
         imageBUrl: urlDataB.publicUrl,
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
     console.error('Edge function error:', error)
     return new Response(
       JSON.stringify({ success: false, error: 'INTERNAL_ERROR', message: error.message || 'Failed to process images' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     )
   }
 })
