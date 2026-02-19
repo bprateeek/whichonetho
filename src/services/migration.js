@@ -1,86 +1,17 @@
-import { supabase } from './supabase'
-import { getAnonId } from './votes'
+/**
+ * Migration utilities for anonymous to permanent user conversion
+ *
+ * With Supabase anonymous auth, when a user converts from anonymous to permanent,
+ * their user_id remains the same (the anonymous user is upgraded, not replaced).
+ * This means no data migration is needed - all their polls, votes, etc. are
+ * already linked to their user_id.
+ */
 
 /**
- * Migrate anonymous history to a newly created user account
- * This links all polls, votes, and reports created with the anonymous ID
- * to the new user's account
- *
- * @param {string} userId - The new user's ID
- * @returns {Promise<{success: boolean, migratedPolls: number, migratedVotes: number}>}
+ * Placeholder for any future migration needs
+ * Currently no-op since Supabase anonymous auth preserves user_id on upgrade
  */
-export async function migrateAnonymousHistory(userId) {
-  const anonId = await getAnonId()
-
-  if (!anonId) {
-    return { success: true, migratedPolls: 0, migratedVotes: 0 }
-  }
-
-  let migratedPolls = 0
-  let migratedVotes = 0
-
-  try {
-    // Migrate polls created by this user
-    const { data: pollsData, error: pollsError } = await supabase
-      .from('polls')
-      .update({ user_id: userId })
-      .eq('creator_anon_id', anonId)
-      .is('user_id', null)
-      .select('id')
-
-    if (pollsError) {
-      console.error('Failed to migrate polls:', pollsError)
-    } else {
-      migratedPolls = pollsData?.length || 0
-    }
-
-    // Migrate votes cast by this user
-    const { data: votesData, error: votesError } = await supabase
-      .from('votes')
-      .update({ user_id: userId })
-      .eq('anon_id', anonId)
-      .is('user_id', null)
-      .select('id')
-
-    if (votesError) {
-      console.error('Failed to migrate votes:', votesError)
-    } else {
-      migratedVotes = votesData?.length || 0
-    }
-
-    // Migrate poll reports
-    const { error: reportsError } = await supabase
-      .from('poll_reports')
-      .update({ user_id: userId })
-      .eq('reporter_anon_id', anonId)
-      .is('user_id', null)
-
-    if (reportsError) {
-      console.error('Failed to migrate reports:', reportsError)
-    }
-
-    // Migrate poll creation log entries
-    const { error: logError } = await supabase
-      .from('poll_creation_log')
-      .update({ user_id: userId })
-      .eq('creator_anon_id', anonId)
-      .is('user_id', null)
-
-    if (logError) {
-      console.error('Failed to migrate creation log:', logError)
-    }
-
-    return {
-      success: true,
-      migratedPolls,
-      migratedVotes,
-    }
-  } catch (error) {
-    console.error('Migration failed:', error)
-    return {
-      success: false,
-      migratedPolls,
-      migratedVotes,
-    }
-  }
+export async function migrateAnonymousHistory() {
+  // No migration needed - Supabase anonymous auth preserves user_id
+  return { success: true, migratedPolls: 0, migratedVotes: 0 }
 }

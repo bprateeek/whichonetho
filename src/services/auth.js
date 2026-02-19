@@ -127,7 +127,7 @@ export async function getProfile(userId) {
     .from('user_profiles')
     .select('*')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error('Failed to fetch profile:', error)

@@ -1,15 +1,15 @@
 import { supabase } from './supabase'
-import { getUserIdentifier } from './votes'
+import { getUserId } from './votes'
 
 /**
  * Get analytics stats for the current user's polls
  * @returns {Promise<Object>} User stats
  */
 export async function getUserStats() {
-  const { user_id, anon_id } = await getUserIdentifier()
+  const userId = await getUserId()
 
   // Get user's created polls with vote counts
-  let pollsQuery = supabase
+  const { data: polls, error: pollsError } = await supabase
     .from('polls')
     .select(`
       id,
@@ -22,16 +22,8 @@ export async function getUserStats() {
         votes_b
       )
     `)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
-
-  // Query by user_id if authenticated, otherwise by creator_anon_id
-  if (user_id) {
-    pollsQuery = pollsQuery.eq('user_id', user_id)
-  } else {
-    pollsQuery = pollsQuery.eq('creator_anon_id', anon_id)
-  }
-
-  const { data: polls, error: pollsError } = await pollsQuery
 
   if (pollsError) {
     console.error('Failed to fetch user polls:', pollsError)
@@ -39,18 +31,11 @@ export async function getUserStats() {
   }
 
   // Get user's votes
-  let votesQuery = supabase
+  const { data: votes, error: votesError } = await supabase
     .from('votes')
     .select('voted_for, voter_gender, created_at')
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
-
-  if (user_id) {
-    votesQuery = votesQuery.eq('user_id', user_id)
-  } else {
-    votesQuery = votesQuery.eq('anon_id', anon_id)
-  }
-
-  const { data: votes, error: votesError } = await votesQuery
 
   if (votesError) {
     console.error('Failed to fetch user votes:', votesError)
@@ -115,20 +100,13 @@ export async function getUserStats() {
  * @returns {Promise<Array>} Vote counts by day
  */
 export async function getVoteTimeline(days = 7) {
-  const { user_id, anon_id } = await getUserIdentifier()
+  const userId = await getUserId()
 
   // Get user's poll IDs
-  let pollsQuery = supabase
+  const { data: userPolls } = await supabase
     .from('polls')
     .select('id')
-
-  if (user_id) {
-    pollsQuery = pollsQuery.eq('user_id', user_id)
-  } else {
-    pollsQuery = pollsQuery.eq('creator_anon_id', anon_id)
-  }
-
-  const { data: userPolls } = await pollsQuery
+    .eq('user_id', userId)
 
   if (!userPolls || userPolls.length === 0) {
     return []
