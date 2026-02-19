@@ -9,8 +9,11 @@ import { getFilteredPolls } from "../services/polls";
 import { castVote } from "../services/votes";
 import { reportPoll, getLocalReportedList } from "../services/reports";
 import { toast } from "../lib/toast";
+import { useAuth } from "../context/AuthContext";
 
 export default function Vote() {
+  const { isLoading: authLoading } = useAuth();
+
   // Filter state
   const [selectedGenders, setSelectedGenders] = useState(
     new Set(["female", "male", "nonbinary"]),
@@ -29,8 +32,11 @@ export default function Vote() {
   const [reportingPollId, setReportingPollId] = useState(null);
   const [isReporting, setIsReporting] = useState(false);
 
-  // Fetch polls when filters change
+  // Fetch polls when filters change (wait for auth to be ready)
   useEffect(() => {
+    // Don't fetch until auth is ready
+    if (authLoading) return;
+
     const fetchPolls = async () => {
       setIsLoading(true);
       setError(null);
@@ -53,7 +59,7 @@ export default function Vote() {
     };
 
     fetchPolls();
-  }, [selectedGenders, timeFilter]);
+  }, [selectedGenders, timeFilter, authLoading]);
 
   const toggleGender = (gender) => {
     setSelectedGenders((prev) => {
@@ -169,7 +175,7 @@ export default function Vote() {
       </div>
 
       {/* Loading state */}
-      {isLoading && (
+      {(isLoading || authLoading) && (
         <div className="flex items-center justify-center py-12">
           <Spinner />
         </div>
