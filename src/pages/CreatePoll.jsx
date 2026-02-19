@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ImageUpload from "../components/ImageUpload";
-import GenderSelect from "../components/GenderSelect";
+import FilterChip from "../components/FilterChip";
 import { checkPollRateLimit, createPollRecord } from "../services/polls";
 import { compressImage } from "../services/storage";
 import { moderateAndUploadImages } from "../services/moderation";
 import { toast } from "../lib/toast";
+
+const genderOptions = [
+  { value: "female", label: "Women" },
+  { value: "male", label: "Men" },
+  { value: "nonbinary", label: "Others" },
+];
 
 const contextOptions = [
   { value: "date", label: "Date Night" },
@@ -200,41 +206,48 @@ export default function CreatePoll() {
         ))}
       </div>
 
-      {/* Step 1: Gender */}
+      {/* Step 1: Gender & Body Type */}
       {step === 1 && (
         <div className="space-y-6">
           <div className="text-center">
             <h1 className="font-geist text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-              What's your gender?
+              About you
             </h1>
             <p className="font-geist text-gray-500 dark:text-gray-400 mt-2">
               This helps us show your poll to the right voters
             </p>
           </div>
 
-          <GenderSelect
-            value={formData.gender}
-            onChange={(value) => updateForm("gender", value)}
-          />
-
-          <div className="space-y-2">
-            <label className="font-geist block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Body type (optional)
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
-              {bodyTypeOptions.map((option) => (
-                <button
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg dark:shadow-gray-900/50 border border-gray-200 dark:border-gray-700 p-3">
+            {/* Gender selection */}
+            <div className="grid grid-cols-3 gap-3">
+              {genderOptions.map((option) => (
+                <FilterChip
                   key={option.value}
-                  type="button"
-                  onClick={() => updateForm("bodyType", option.value)}
-                  className={`font-geist py-2 px-3 rounded-lg border transition-all text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 ${
-                    formData.bodyType === option.value
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300"
-                  }`}
-                >
-                  {option.label}
-                </button>
+                  label={option.label}
+                  selected={formData.gender === option.value}
+                  onClick={() => updateForm("gender", option.value)}
+                />
+              ))}
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-gray-200 dark:border-gray-700 my-3" />
+
+            {/* Body type selection */}
+            <div className="grid grid-cols-3 gap-2">
+              {bodyTypeOptions.map((option) => (
+                <FilterChip
+                  key={option.value}
+                  label={option.label}
+                  selected={formData.bodyType === option.value}
+                  onClick={() =>
+                    updateForm(
+                      "bodyType",
+                      formData.bodyType === option.value ? "" : option.value
+                    )
+                  }
+                />
               ))}
             </div>
           </div>
