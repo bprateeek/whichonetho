@@ -44,6 +44,9 @@ self.addEventListener('fetch', (event) => {
   // Skip chrome-extension and other non-http(s) requests
   if (!url.protocol.startsWith('http')) return;
 
+  // Skip cross-origin requests - let browser handle them normally
+  if (url.origin !== self.location.origin) return;
+
   // API calls to Supabase - network only (real-time data)
   if (url.hostname.includes('supabase.co')) {
     return;
