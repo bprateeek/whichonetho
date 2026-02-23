@@ -83,6 +83,19 @@ export default function Vote() {
 
       if (result.alreadyVoted) {
         toast.info("You've already voted on this poll");
+      } else {
+        // Optimistically update the vote count in local state
+        setPolls((prevPolls) =>
+          prevPolls.map((poll) =>
+            poll.id === pollId
+              ? {
+                  ...poll,
+                  votes_a: poll.votes_a + (votedOption === "A" ? 1 : 0),
+                  votes_b: poll.votes_b + (votedOption === "B" ? 1 : 0),
+                }
+              : poll
+          )
+        );
       }
 
       setVotedPolls((prev) => new Map(prev).set(pollId, votedOption));
