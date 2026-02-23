@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "../lib/toast";
-import { validateUsername, checkUsernameAvailable } from "../services/auth";
+import { validateUsername, validatePassword, checkUsernameAvailable } from "../services/auth";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -61,9 +61,10 @@ export default function Signup() {
       return;
     }
 
-    // Validate password length
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+    // Validate password strength
+    const { valid: passwordValid, error: passwordError } = validatePassword(password);
+    if (!passwordValid) {
+      setError(passwordError);
       return;
     }
 
@@ -260,7 +261,7 @@ export default function Signup() {
             autoComplete="new-password"
             minLength={8}
             className="font-geist w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            placeholder="At least 8 characters"
+            placeholder="12+ chars or 8+ with mixed case & number"
           />
         </div>
 

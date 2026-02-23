@@ -3,3 +3,24 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none';
+
+# Cache static assets with content hashes (immutable)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache service worker with revalidation
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Cache manifest
+/manifest.json
+  Cache-Control: public, max-age=86400
+
+# Cache images and icons
+/*.png
+  Cache-Control: public, max-age=604800
+/*.svg
+  Cache-Control: public, max-age=604800
+/*.ico
+  Cache-Control: public, max-age=604800

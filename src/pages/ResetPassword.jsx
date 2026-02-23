@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../services/supabase";
+import { validatePassword } from "../services/auth";
 import { toast } from "../lib/toast";
 import Spinner from "../components/Spinner";
 
@@ -14,30 +15,46 @@ export default function ResetPassword() {
   const [isCheckingToken, setIsCheckingToken] = useState(true);
 
   useEffect(() => {
+    let recoveryEventReceived = false;
+
     // Subscribe to auth state changes to detect PASSWORD_RECOVERY event
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
+        recoveryEventReceived = true;
         setIsValidToken(true);
         setIsCheckingToken(false);
       }
     });
 
-    // Fallback: check if session already exists (the event may have fired
-    // before this component mounted, since AuthContext also listens)
-    const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session) {
-        setIsValidToken(true);
+    // Fallback: check if this is a valid recovery link
+    // Only accept session if PASSWORD_RECOVERY event fired OR URL contains recovery token
+    const checkRecoveryToken = async () => {
+      // Check if URL hash contains recovery type (Supabase includes type=recovery)
+      const hash = window.location.hash;
+      const isRecoveryUrl = hash.includes("type=recovery");
+
+      if (recoveryEventReceived) {
+        // Already handled by onAuthStateChange
+        return;
       }
+
+      if (isRecoveryUrl) {
+        // Valid recovery URL - check for session
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+          setIsValidToken(true);
+        }
+      }
+      // If neither recovery event nor recovery URL, token is invalid
       setIsCheckingToken(false);
     };
 
-    // Give the onAuthStateChange listener a moment to fire, then check session
-    const timer = setTimeout(checkSession, 1000);
+    // Give the onAuthStateChange listener a moment to fire, then check URL
+    const timer = setTimeout(checkRecoveryToken, 1000);
 
     return () => {
       subscription.unsubscribe();
@@ -49,8 +66,9 @@ export default function ResetPassword() {
     e.preventDefault();
     setError(null);
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+    const { valid: passwordValid, error: passwordError } = validatePassword(password);
+    if (!passwordValid) {
+      setError(passwordError);
       return;
     }
     if (password !== confirmPassword) {
@@ -135,7 +153,7 @@ export default function ResetPassword() {
             autoComplete="new-password"
             minLength={8}
             className="font-geist w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            placeholder="At least 8 characters"
+            placeholder="12+ chars or 8+ with mixed case & number"
           />
         </div>
 

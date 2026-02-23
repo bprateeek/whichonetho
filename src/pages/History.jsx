@@ -191,6 +191,7 @@ function HistoryPollCard({ poll, showUserVote }) {
           <img
             src={poll.image_a_url}
             alt="Outfit A"
+            loading="lazy"
             className="w-full h-full object-cover"
           />
           <div
@@ -222,6 +223,7 @@ function HistoryPollCard({ poll, showUserVote }) {
           <img
             src={poll.image_b_url}
             alt="Outfit B"
+            loading="lazy"
             className="w-full h-full object-cover"
           />
           <div
