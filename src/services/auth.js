@@ -168,6 +168,42 @@ export function onAuthStateChange(callback) {
 }
 
 /**
+ * Validate password strength
+ * Requires either: 12+ characters OR 8+ characters with complexity (uppercase, lowercase, number)
+ * @param {string} password
+ * @returns {{valid: boolean, error: string|null}}
+ */
+export function validatePassword(password) {
+  if (!password) {
+    return { valid: false, error: 'Password is required' }
+  }
+
+  // If 12+ characters, accept without complexity requirements
+  if (password.length >= 12) {
+    return { valid: true, error: null }
+  }
+
+  // For shorter passwords (8-11 chars), require complexity
+  if (password.length < 8) {
+    return { valid: false, error: 'Password must be at least 8 characters' }
+  }
+
+  // Check complexity: uppercase, lowercase, and number
+  const hasUppercase = /[A-Z]/.test(password)
+  const hasLowercase = /[a-z]/.test(password)
+  const hasNumber = /[0-9]/.test(password)
+
+  if (!hasUppercase || !hasLowercase || !hasNumber) {
+    return {
+      valid: false,
+      error: 'Password must contain uppercase, lowercase, and a number (or use 12+ characters)'
+    }
+  }
+
+  return { valid: true, error: null }
+}
+
+/**
  * Validate username format
  * @param {string} username
  * @returns {{valid: boolean, error: string|null}}

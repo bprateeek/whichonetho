@@ -67,6 +67,43 @@ async function getSignatureKey(key: string, dateStamp: string, region: string, s
   return kSigning
 }
 
+// Validate image magic numbers to ensure file is actually an image
+function validateImageMagicNumber(base64Data: string): { valid: boolean; format?: string; error?: string } {
+  try {
+    const bytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))
+
+    if (bytes.length < 12) {
+      return { valid: false, error: 'File too small to be a valid image' }
+    }
+
+    // Check JPEG (FF D8 FF)
+    if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+      return { valid: true, format: 'jpeg' }
+    }
+
+    // Check PNG (89 50 4E 47 0D 0A 1A 0A)
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47 &&
+        bytes[4] === 0x0D && bytes[5] === 0x0A && bytes[6] === 0x1A && bytes[7] === 0x0A) {
+      return { valid: true, format: 'png' }
+    }
+
+    // Check GIF (47 49 46 38 = GIF8)
+    if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) {
+      return { valid: true, format: 'gif' }
+    }
+
+    // Check WebP (RIFF....WEBP)
+    if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+        bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+      return { valid: true, format: 'webp' }
+    }
+
+    return { valid: false, error: 'Invalid image format. Supported: JPEG, PNG, GIF, WebP' }
+  } catch {
+    return { valid: false, error: 'Failed to decode image data' }
+  }
+}
+
 async function checkModeration(imageBase64: string): Promise<ModerationResult> {
   const AWS_ACCESS_KEY_ID = Deno.env.get('AWS_ACCESS_KEY_ID')
   const AWS_SECRET_ACCESS_KEY = Deno.env.get('AWS_SECRET_ACCESS_KEY')
@@ -199,6 +236,21 @@ serve(async (req) => {
     }
 
     console.log(`Processing poll ${pollId}`)
+
+    // Validate image magic numbers (server-side file type verification)
+    const validationA = validateImageMagicNumber(imageA)
+    const validationB = validateImageMagicNumber(imageB)
+
+    if (!validationA.valid || !validationB.valid) {
+      const errorMessage = !validationA.valid ? validationA.error : validationB.error
+      console.log(`Image validation failed: ${errorMessage}`)
+      return new Response(
+        JSON.stringify({ success: false, error: 'INVALID_IMAGE', message: errorMessage }),
+        { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log(`Image formats validated: A=${validationA.format}, B=${validationB.format}`)
 
     // Moderate both images
     const [moderationA, moderationB] = await Promise.all([
